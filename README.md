@@ -77,6 +77,8 @@ Para editar la página, el MCP ofrece `get_landing`, `update_landing` y `clear_l
 
 Las instrucciones del MCP, `update_landing`, la respuesta de lectura (`designGuidance`) y la guía piden mantener las interacciones dentro de la página: sin rutas ni navegación externa, sin cejas sobre títulos ni numeración decorativa. Se conservan las cifras que sean datos o pasos necesarios. Estas son pautas para el agente; no reescriben automáticamente lo que ya está publicado.
 
+Las instrucciones internas también exigen conservar el trabajo de otros agentes y pedir permiso explícito al usuario antes de borrar, ocultar, reemplazar, revertir, desactivar o arriesgar otras partes. Una autorización general de editar no basta. Se distribuyen al inicializar el MCP, en sus herramientas de edición, en `collaborationGuidance` al leer la página y en el texto copiado. Ante un conflicto, el agente debe volver a leer e integrar ambos trabajos; cambiar solo `expectedRevision` para forzar una versión anterior no está permitido por estas instrucciones. Son pautas del agente, sin un nuevo flujo de aprobación en la interfaz.
+
 ## API
 
 `GET /api/landing` es público. Devuelve `title`, `html`, `css`, `js`, `revision` y `updatedAt`.
