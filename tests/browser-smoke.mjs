@@ -14,7 +14,7 @@ try {
   await page.getByLabel('Usuario', { exact: true }).fill(handle);
   await page.getByLabel('Contraseña', { exact: true }).fill(`test-password-${Date.now()}!`);
   await page.getByRole('button', { name: 'Crear mi cuenta' }).click();
-  await page.getByRole('heading', { name: 'Tu agente. Esta página.' }).waitFor();
+  await page.getByRole('heading', { name: 'Conexiones' }).waitFor();
   await page.getByLabel('Nombre de la conexión').fill('Prueba de navegador');
   await page.getByRole('button', { name: 'Crear token' }).click();
   await page.locator('#new-token code').waitFor();
@@ -46,7 +46,7 @@ try {
   await page.getByRole('button', { name: 'Conexiones', exact: false }).click();
   page.on('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Revocar', exact: true }).click();
-  await page.getByText('Todavía no tienes conexiones.', { exact: false }).waitFor();
+  await page.getByText('Sin tokens activos', { exact: false }).waitFor();
   await page.getByRole('button', { name: 'Mi cuenta', exact: false }).click();
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
   await page.getByRole('button', { name: 'Entrar', exact: false }).last().waitFor();
