@@ -4,6 +4,7 @@
   const esc = text => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const base = window.AA_API_BASE;
   const sessionKey = 'aa-shared-landing-session-v1';
+  let theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   let session = sessionStorage.getItem(sessionKey) || '';
   let user = null, landing = { title: '', html: '', css: '', js: '', revision: -1 }, timer, toastTimer, pollBusy = false;
   let panelTab = 'connections', authTab = 'register', methodTab = 'mcp', editorTab = 'html', draft = null, editorDirty = false, newToken = '';
@@ -22,13 +23,36 @@
     return result;
   }
   function toast(message) { clearTimeout(toastTimer); $('toast').textContent = message; $('toast').classList.add('visible'); toastTimer = setTimeout(() => $('toast').classList.remove('visible'), 4200); }
+  function applyTheme(next) {
+    theme = next === 'dark' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = theme;
+    try { localStorage.setItem('aa-theme', theme); } catch {}
+    const button = $('theme-toggle');
+    const label = theme === 'dark' ? 'Activar modo claro' : 'Activar modo oscuro';
+    button.setAttribute('aria-label', label); button.title = label; button.setAttribute('aria-pressed', String(theme === 'dark'));
+    button.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${theme === 'dark' ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>' : '<path d="M20.7 13.3A9 9 0 0 1 10.7 3.3a9 9 0 1 0 10 10Z"/>'}</svg>`;
+    // Send only a visual preference. Do not reload the iframe or reset its state.
+    for (const frame of [$('landing-frame'), $('preview-frame')]) frame?.contentWindow?.postMessage({ type: 'aa:theme', theme }, '*');
+  }
+  function applyAppearance(value = {}) {
+    const style = document.documentElement.style;
+    for (const [field, variable] of [['accentColor', '--aa-accent-light'], ['darkAccentColor', '--aa-accent-dark']]) {
+      if (/^#[a-fA-F0-9]{6}$/.test(value[field] || '')) style.setProperty(variable, value[field]); else style.removeProperty(variable);
+    }
+    if (Number.isFinite(value.buttonRadius) && value.buttonRadius >= 4 && value.buttonRadius <= 24) style.setProperty('--aa-control-radius', `${value.buttonRadius}px`);
+    else style.removeProperty('--aa-control-radius');
+  }
   function frameDocument(value) {
     const csp = "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; media-src data: blob:; connect-src 'none'; frame-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'";
-    return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${esc(value.title || 'Página compartida')}</title><style>html,body{margin:0;min-height:100%;font-family:system-ui,sans-serif}*{box-sizing:border-box}${value.css || ''}</style></head><body>${value.html || ''}<script>${value.js || ''}<\/script></body></html>`;
+    const themeCss = ':root{color-scheme:light;--aa-background:#ffffff;--aa-foreground:#1b2b24;--aa-surface:#f5f6f2;--aa-muted:#788078;--aa-border:#e5e8e2}:root[data-aa-theme="dark"]{color-scheme:dark;--aa-background:#101511;--aa-foreground:#e5eae2;--aa-surface:#1d271f;--aa-muted:#a0ad9b;--aa-border:#354135}:root[data-aa-theme="dark"] body{background:var(--aa-background)!important;color:var(--aa-foreground)!important}';
+    const themeBridge = 'addEventListener("message",function(e){if(e.source!==parent||e.data?.type!=="aa:theme"||!["light","dark"].includes(e.data.theme))return;document.documentElement.dataset.aaTheme=e.data.theme;});';
+    return `<!doctype html><html lang="es" data-aa-theme="${theme}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="${csp}"><title>${esc(value.title || 'Página compartida')}</title><style>html,body{margin:0;min-height:100%;font-family:system-ui,sans-serif}body{background:var(--aa-background);color:var(--aa-foreground)}*{box-sizing:border-box}${value.css || ''}</style><style>${themeCss}</style></head><body>${value.html || ''}<script>${themeBridge}<\/script><script>${value.js || ''}<\/script></body></html>`;
   }
   function renderLanding(next) {
     if (next.revision === landing.revision) return;
-    landing = next; $('landing-frame').srcdoc = frameDocument(next);
+    const contentChanged = landing.revision < 0 || ['html', 'css', 'js'].some(key => next[key] !== landing[key]);
+    landing = next; applyAppearance(next.appearance);
+    if (contentChanged) $('landing-frame').srcdoc = frameDocument(next);
     document.title = next.title ? `${next.title} · Adversarial Acceleration` : 'Adversarial Acceleration';
   }
   async function poll() {
@@ -179,6 +203,9 @@ Content-Type: application/json
   $('account-dialog').addEventListener('close', () => { newToken = ''; $('dialog-content').innerHTML = ''; });
   document.addEventListener('keydown', event => { if ((event.metaKey || event.ctrlKey) && event.key === 's' && $('account-dialog').open && panelTab === 'editor' && user) { event.preventDefault(); publish(); } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
+  $('theme-toggle').addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
+  $('landing-frame').addEventListener('load', () => applyTheme(theme));
+  applyTheme(theme);
   poll(); timer = setInterval(poll, 5000);
   if (session) request('/api/me').then(result => { user = result.profile; updateAccount(); }).catch(() => {});
 })();

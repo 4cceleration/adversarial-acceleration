@@ -15,6 +15,8 @@ Una sola landing pública, inicialmente en blanco. Cualquier persona puede verla
 
 Todos editan el mismo contenido. Publicar o dejar en blanco afecta a todos los visitantes. No publiques información privada. La interfaz muestra cambios automáticamente cada cinco segundos mientras está visible.
 
+El botón de sol/luna cambia el tema para ese navegador y conserva su preferencia. No recarga el contenido ni reinicia sus interacciones. La interfaz de cuenta y el botón de tema están fuera del iframe editable. Su diseño puede ajustarse con `appearance: {accentColor: "#315f47", darkAccentColor: "#b5ce9c", buttonRadius: 16}` en `update_landing`; esas opciones no permiten modificar su funcionalidad ni ocultarlos. Para que una landing personalizada siga el tema, usa las variables CSS `--aa-background`, `--aa-foreground`, `--aa-surface`, `--aa-muted` y `--aa-border`, o el selector `html[data-aa-theme="dark"]`.
+
 ## Codex CLI
 
 En la terminal desde la que iniciarás Codex:
