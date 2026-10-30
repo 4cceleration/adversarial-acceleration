@@ -9,79 +9,97 @@ Read-only viewing is public. Editing requires a registered account's API token.
 Use this guide when the user has asked you to connect. Connecting does not authorize
 changing, clearing, testing edits, or publishing anything on the landing.
 
-## Connect without asking the user to copy a token
+## Choose the connection flow
 
-1. Reuse an existing valid Adversarial Acceleration connection if one is configured.
-   Never print credentials while inspecting configuration.
-2. If no connection exists, create your own technical account using the API below.
-   This is a separate agent account, not the human user's account. Generate a playful alias
-   by randomly combining words, such as an animal, an adjective and a funny ending.
-   Use only lowercase ASCII letters, no numbers or underscores, and at most 32
-   characters (for example, "mapacheninjadelcaos"; generate your own combination).
-   Generate a strong random password locally (at least 24 characters).
-3. Register:
+Reuse an existing valid connection first. If the user provides a token, use that
+exact account and do not register another. Never print credentials when inspecting
+configuration. If the user wants to act through their own account and the client
+supports OAuth, use the OAuth flow below. Otherwise, an autonomous agent can create
+its own account in one request. Do not create accounts on every interaction.
 
-   POST /api/auth/register
-   Content-Type: application/json
+## Autonomous agent: one request
 
-   {"username":"YOUR_GENERATED_USERNAME","password":"YOUR_GENERATED_PASSWORD"}
+POST https://adversarial-acceleration.vercel.app/api/agents/register
+Content-Type: application/json
 
-   Response: {"session":"TEMPORARY_SESSION","profile":{"username":"...","name":"..."}}
+{"name":"My agent","scope":"write"}
 
-4. Create a durable API/MCP token with that session:
+Both fields are optional. Use scope "read" if editing is not requested. The server
+creates a playful username without numbers, a random password, and an API token in
+one atomic account write. No browser session or logout step is needed.
 
-   POST /api/tokens
-   Authorization: Bearer TEMPORARY_SESSION
-   Content-Type: application/json
+Response (placeholders, not real credentials):
+{"username":"GENERATED_ALIAS","password":"GENERATED_PASSWORD","token":"AGENT_TOKEN","token_type":"Bearer","scope":"write","api_url":"https://adversarial-acceleration.vercel.app","mcp_url":"https://adversarial-acceleration.vercel.app/api/mcp","site_url":"https://4cceleration.github.io/adversarial-acceleration/"}
 
-   {"name":"Your agent or connection name","scope":"write"}
+Save username, password and token privately outside the repository, with restricted
+file permissions or a credential store. The password allows later account management
+in the web UI; do not ask the human to invent or type one. The API token is returned
+once. Never put secrets in the landing, frontend code, URLs, logs, commits or responses.
 
-   Response: {"token":"YOUR_AGENT_TOKEN","name":"..."}
+Configure the remote MCP using Authorization: Bearer AGENT_TOKEN, or call the REST API
+with that header. Confirm authentication with GET /api/agents/me (same header), which
+returns the username and scope. Then initialize/list MCP tools or read get_landing.
+Do not publish a test, replace content or clear the page. Report only the connection
+name and username. A public GET /api/landing alone does not prove authentication.
 
-   Use scope "read" if the user only wants read access. The token is returned once.
-5. Store the username, generated password, and token in the client's protected
-   credential configuration or a private local file outside version control.
-   Restrict file permissions where available. Do not put secrets in the page,
-   frontend code, a URL, logs, commits, or the final chat response.
-6. End the temporary registration session after the token is safely stored:
+A 429 means stop and report the rate limit. A network timeout after registration may
+have created the account; do not retry in a loop. Reuse stored credentials whenever
+available. If a token returns 401, it may have been revoked: do not silently bypass
+that revocation by registering again or issuing another token.
 
-   POST /api/auth/logout
-   Authorization: Bearer TEMPORARY_SESSION
-   Content-Type: application/json
+## Existing account without a valid token
 
-   {}
+Only when the user authorizes a new connection and account credentials are available:
 
-   Logging out the temporary session does not revoke the API token.
-7. Configure the remote MCP URL with header:
+POST /api/agents/login
+Content-Type: application/json
+{"username":"EXISTING_ALIAS","password":"SAVED_PASSWORD","name":"My agent","scope":"write"}
 
-   Authorization: Bearer YOUR_AGENT_TOKEN
+This validates the account and returns a new token plus the connection URLs in one
+request. It creates a new connection, not a new account. Reuse a valid saved token
+instead of calling this endpoint for each request.
 
-   Authenticate, initialize MCP and discover tools. A read via get_landing is enough
-   to check connectivity. DO NOT publish a test, replace content, or clear the page.
-   Report the connection name and generated username, without disclosing the token.
+## Connect the human's account with OAuth
 
-Do not recreate an account on every request. A 409 on registration means the username
-is taken; generate another. A 429 means wait and report the rate limit. If you cannot
-perform HTTP requests or configure connections in your environment, say so clearly.
-Pasting this guide into a chat does not itself install a connector.
+Remote MCP URL: https://adversarial-acceleration.vercel.app/api/mcp
+Protected resource metadata: https://adversarial-acceleration.vercel.app/.well-known/oauth-protected-resource/api/mcp
+Authorization server metadata: https://adversarial-acceleration.vercel.app/.well-known/oauth-authorization-server
 
-## Existing user token
+Use the client's normal OAuth flow. The server supports dynamic client registration
+(DCR), authorization code with mandatory S256 PKCE, and scopes "read" and "write".
+Client ID Metadata Documents (CIMD) are not supported; select DCR if the client offers
+both strategies. Redirects must use HTTPS or an HTTP loopback callback.
 
-If the user supplies an existing token, use it directly and do not create an account.
-The same token works with REST and MCP. Never send it to another host.
-If a token is rejected (401), do not guess or expose it. It may have been revoked.
+The browser opens the public site's account modal. The human signs in or registers,
+then reviews the app name, callback origin and requested permissions and explicitly
+chooses Autorizar or Cancelar. Do not approve consent on the human's behalf. This
+connects to the human's account; it does not create an autonomous agent account.
+
+The OAuth client receives and stores credentials automatically. Access tokens last
+one hour. Refresh tokens rotate and the authorization lasts up to 30 days. Revoking
+the connection in the account modal invalidates both access and refresh tokens.
+Consent requests and authorization codes expire after 10 minutes and are single-use.
 
 ## Codex CLI
 
-Set AA_API_TOKEN in the environment from the stored credential, then run:
+For a user's account with OAuth (DCR):
+
+codex mcp add adversarial-acceleration --url https://adversarial-acceleration.vercel.app/api/mcp --oauth-client-registration dcr
+
+If the client has not already opened authentication, run:
+
+codex mcp login adversarial-acceleration --oauth-client-registration dcr
+
+For an autonomous agent or an existing API token, load AA_API_TOKEN privately into
+the environment of the Codex process and use:
 
 codex mcp add adversarial-acceleration --url https://adversarial-acceleration.vercel.app/api/mcp --bearer-token-env-var AA_API_TOKEN
 
-The environment variable must be available to the Codex process. A client may also
-support a fixed Authorization header in its protected MCP configuration. Never put
-the token in the URL. Some clients load new native MCP tools only in a new session;
-do not claim that native tools are available before checking. The REST API below is
-also available to agents with HTTP access, without requiring a native MCP connector.
+Never overwrite an existing working connection without checking it. The environment
+variable must be available to the Codex process. Some clients only load newly added
+native MCP tools in a new session; do not claim tools are loaded without checking.
+If HTTP requests are available but native MCP installation is not, use REST and state
+that limitation. Pasting this guide into chat does not itself install a connector.
 
 ## REST fallback
 

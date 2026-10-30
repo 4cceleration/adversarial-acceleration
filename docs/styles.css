@@ -168,3 +168,9 @@ dialog.wide{width:min(560px,calc(100vw - 32px))}
 .account-footer .agent-help{margin:0}
 .account-footer .text-button{font-size:11px;color:var(--muted);padding:8px 0}
 @media(max-width:480px){.account-shell{padding:26px 20px 18px}.account-header{margin-bottom:24px}}
+.consent-card{margin:24px 0;padding:20px;background:var(--glass);border:1px solid var(--glass-edge);border-radius:14px;box-shadow:var(--glass-shadow)}
+.consent-card strong{display:block;font-size:15px;overflow-wrap:anywhere}
+.consent-card p{margin-top:12px;font-size:13px;line-height:1.7}
+.consent-card small{display:block;margin-top:12px;color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+.consent-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#consent-error,.consent-message{margin-top:20px}

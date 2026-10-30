@@ -16,11 +16,10 @@ try {
   await page.getByRole('button', { name: 'Crear mi cuenta' }).click();
   await page.getByRole('heading', { name: 'Conexiones' }).waitFor();
   await page.getByLabel('Nombre', { exact: true }).fill('Prueba de navegador');
+  const tokenResponse = page.waitForResponse(response => response.url().endsWith('/api/tokens') && response.request().method() === 'POST');
   await page.getByRole('button', { name: 'Crear conexión', exact: true }).click();
   await page.getByRole('button', { name: 'Copiar para mi agente' }).waitFor();
-  await page.locator('.manual-connection > summary').click();
-  const token = (await page.locator('#instructions .copy-row code').last().innerText()).replace(/^Bearer /, '');
-  await page.locator('.manual-connection > summary').click();
+  const { token } = await (await tokenResponse).json();
   assert.match(token, /^aa_live_/);
   await mkdir('.local', { recursive: true });
   await page.screenshot({ path: '.local/connections-desktop.png', mask: [page.locator('#new-token')] });

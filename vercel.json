@@ -2,5 +2,12 @@
   "version": 2,
   "outputDirectory": "docs",
   "functions": { "api/index.js": { "maxDuration": 30 } },
-  "rewrites": [{ "source": "/api/:path*", "destination": "/api/index?route=:path*" }]
+  "rewrites": [
+    { "source": "/.well-known/:path*", "destination": "/api/index?oauth=.well-known/:path*" },
+    { "source": "/authorize", "destination": "/api/index?oauth=authorize" },
+    { "source": "/token", "destination": "/api/index?oauth=token" },
+    { "source": "/register", "destination": "/api/index?oauth=register" },
+    { "source": "/revoke", "destination": "/api/index?oauth=revoke" },
+    { "source": "/api/:path*", "destination": "/api/index?route=:path*" }
+  ]
 }

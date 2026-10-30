@@ -1,3 +1,5 @@
+import { generateUsername, generatePassword } from './identity.js';
+
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -7,8 +9,10 @@
   let theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   let session = sessionStorage.getItem(sessionKey) || '';
   let user = null, landing = { title: '', html: '', css: '', js: '', revision: -1 }, timer, toastTimer, pollBusy = false;
-  let authTab = 'register', methodTab = 'mcp', newToken = '', newTokenName = '';
+  let authTab = 'register', newToken = '', newTokenName = '';
   let registrationUsername = '', registrationPassword = '';
+  let oauthRequestId = new URLSearchParams(location.hash.slice(1)).get('authorize') || '';
+  if (!/^[a-f0-9]{64}$/.test(oauthRequestId)) oauthRequestId = '';
   function icon(name) {
     const paths = {
       user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',
@@ -76,19 +80,6 @@
     if (user) $('avatar').textContent = user.name.slice(0, 2).toUpperCase();
     else $('avatar').innerHTML = icon('user');
   }
-  function generateUsername() {
-    const words = [
-      ['mapache', 'capibara', 'flan', 'taco', 'pato', 'gato', 'pulpo', 'kiwi', 'nugget', 'queso', 'churro', 'duende', 'pepino', 'pinguino', 'aguacate', 'cactus', 'panda', 'robot', 'yeti', 'mango', 'banano', 'burrito', 'gnomo', 'dragon', 'conejo', 'waffle', 'nacho', 'tamal', 'coco', 'pollo', 'erizo', 'mochi'],
-      ['ninja', 'cosmico', 'pirata', 'zombi', 'travieso', 'dramatico', 'galactico', 'bailarin', 'chismoso', 'distraido', 'dormilon', 'picante', 'rebelde', 'mistico', 'electrico', 'supremo', 'torpe', 'veloz', 'zen', 'salvaje', 'millonario', 'espacial', 'invisible', 'tropical', 'filosofo', 'mafioso', 'volador', 'legendario', 'divino', 'cantarin', 'furtivo', 'elegante'],
-      ['delcaos', 'delwifi', 'delpan', 'delmar', 'delcafe', 'delcosmos', 'delbarrio', 'delsofa', 'delte', 'delmeme', 'delparque', 'delmetro', 'delclub', 'delbosque', 'delrio', 'delbar', 'sinprisa', 'sinmapa', 'sinsueno', 'sinplan', 'conflow', 'conestilo', 'conhambre', 'conpijama', 'enpatines', 'enorbita', 'enfiesta', 'envacacion', 'debolsillo', 'deguardia', 'deincognito', 'delviernes']
-    ];
-    const random = crypto.getRandomValues(new Uint8Array(words.length));
-    return words.map((list, index) => list[random[index] & 31]).join('');
-  }
-  function generatePassword() {
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@';
-    return Array.from(crypto.getRandomValues(new Uint8Array(24)), byte => alphabet[byte & 63]).join('');
-  }
   function showAuth() {
     if (authTab === 'register' && !registrationUsername) registrationUsername = generateUsername();
     if (authTab === 'register' && !registrationPassword) registrationPassword = generatePassword();
@@ -131,46 +122,40 @@
   }
   async function showPanel() {
     if (!user) { showAuth(); return; }
-    await showConnections();
+    if (oauthRequestId) await showConsent();
+    else await showConnections();
+  }
+  function clearAuthorizationRequest() {
+    oauthRequestId = '';
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+  async function showConsent() {
+    accountLayout('<h2 id="dialog-title">Conectar agente</h2><p class="tiny">Cargando solicitud…</p>');
+    try {
+      const info = await request(`/api/oauth/request?id=${encodeURIComponent(oauthRequestId)}`);
+      accountLayout(`<h2 id="dialog-title">Conectar agente</h2>
+        <div class="consent-card"><strong>${esc(info.name)}</strong><p>Solicita permiso para ${info.scope === 'write' ? 'leer y editar' : 'leer'} la página compartida.</p><small>${esc(info.destination)}</small></div>
+        <div class="consent-actions"><button class="secondary" id="deny-connection">Cancelar</button><button class="primary" id="allow-connection">Autorizar</button></div>
+        <p id="consent-error" class="form-error" role="alert"></p>`);
+      const decide = async allow => {
+        const buttons = [$('allow-connection'), $('deny-connection')];
+        buttons.forEach(button => button.disabled = true);
+        try {
+          const result = await request('/api/oauth/consent', { method: 'POST', data: { requestId: oauthRequestId, allow } });
+          clearAuthorizationRequest(); location.assign(result.redirect);
+        } catch (e) { if (!user) { showAuth(); return; } if ($('consent-error')) $('consent-error').textContent = e.message; buttons.forEach(button => button.disabled = false); }
+      };
+      $('allow-connection').addEventListener('click', () => decide(true));
+      $('deny-connection').addEventListener('click', () => decide(false));
+    } catch (e) {
+      if (!user) { showAuth(); return; }
+      accountLayout(`<h2 id="dialog-title">Conectar agente</h2><p class="form-error consent-message">${esc(e.message)}</p><button class="secondary" id="back-to-account">Volver a mi cuenta</button>`);
+      $('back-to-account').addEventListener('click', () => { clearAuthorizationRequest(); showPanel(); });
+    }
   }
   async function copy(text) {
     try { await navigator.clipboard.writeText(text); toast('Copiado'); }
     catch { toast('No se pudo copiar. Selecciona el texto y cópialo manualmente.'); }
-  }
-  function connectionConfig() {
-    const mcpUrl = `${base}/api/mcp`;
-    if (!newToken) return '';
-    if (methodTab === 'mcp') return JSON.stringify({ mcpServers: { 'adversarial-acceleration': { url: mcpUrl, headers: { Authorization: `Bearer ${newToken}` } } } }, null, 2);
-    if (methodTab === 'codex') return `export AA_API_TOKEN='${newToken}'
-codex mcp add adversarial \\
-  --url ${mcpUrl} \\
-  --bearer-token-env-var AA_API_TOKEN`;
-    return `GET ${base}/api/landing
-
-PUT ${base}/api/landing
-Authorization: Bearer ${newToken}
-Content-Type: application/json
-
-{
-  "expectedRevision": ${Math.max(0, landing.revision)},
-  "html": "<h1>Hola, mundo.</h1>",
-  "css": "body { padding: 80px; }",
-  "js": ""
-}`;
-  }
-  function connectionInstructions() {
-    const urlField = `<p class="field-label connection-label">URL del servidor</p><div class="copy-row"><code>${esc(base)}/api/mcp</code><button class="secondary" id="copy-mcp">Copiar URL</button></div>`;
-    if (!newToken) return `${methodTab === 'mcp' ? urlField : ''}<p class="tiny">Crea un token para completar la conexión.</p>`;
-    if (methodTab === 'mcp') return `${urlField}<p class="field-label connection-label token-label">Authorization</p><div class="copy-row"><code>Bearer ${esc(newToken)}</code><button class="secondary" id="copy-authorization">Copiar valor</button></div><div class="action-row"><button class="secondary" id="copy-config">Copiar configuración MCP</button></div>`;
-    return `<div class="code-box"><pre>${esc(connectionConfig())}</pre></div><div class="action-row"><button class="secondary" id="copy-config">${methodTab === 'codex' ? 'Copiar comando' : 'Copiar ejemplo'}</button></div>`;
-  }
-  function refreshConnection() {
-    if ($('instructions')) {
-      $('instructions').innerHTML = connectionInstructions();
-      $('copy-mcp')?.addEventListener('click', () => copy(`${base}/api/mcp`));
-      $('copy-authorization')?.addEventListener('click', () => copy(`Bearer ${newToken}`));
-      $('copy-config')?.addEventListener('click', () => { if (newToken) copy(connectionConfig()); });
-    }
   }
   function agentPrompt(token = '') {
     const guideUrl = new URL('./llms.txt', location.href).href;
@@ -222,21 +207,8 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
       <div class="connection-ready-heading"><span class="ready-icon">${icon('check')}</span><div><strong>${esc(newTokenName || 'Mi agente')}</strong><p>Acceso listo</p></div></div>
       <button class="primary full" id="copy-token-guide">${icon('copy')} Copiar para mi agente</button>
       <p class="tiny">Pega el texto en tu agente. Guarda el acceso antes de recargar.</p>
-      <details class="manual-connection"><summary>Configuración manual</summary>
-        <div class="method-tabs"><button data-method="mcp" class="${methodTab === 'mcp' ? 'active' : ''}">MCP</button><button data-method="codex" class="${methodTab === 'codex' ? 'active' : ''}">Codex</button><button data-method="api" class="${methodTab === 'api' ? 'active' : ''}">API</button></div>
-        <div id="instructions"></div>
-        <button class="text-button" id="copy-token">Copiar solo el token</button>
-        <details class="agent-guide"><summary>Texto para el agente</summary><pre>${esc(agentPrompt(newToken))}</pre></details>
-      </details>
     </section>`;
-    $('copy-token').addEventListener('click', () => copy(newToken));
     $('copy-token-guide').addEventListener('click', () => copy(agentPrompt(newToken)));
-    document.querySelectorAll('[data-method]').forEach(button => button.addEventListener('click', () => {
-      methodTab = button.dataset.method;
-      document.querySelectorAll('[data-method]').forEach(b => b.classList.toggle('active', b === button));
-      refreshConnection();
-    }));
-    refreshConnection();
   }
   async function loadTokens() {
     try {
@@ -271,5 +243,13 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
   $('landing-frame').addEventListener('load', () => applyTheme(theme));
   applyTheme(theme);
   poll(); timer = setInterval(poll, 5000);
-  if (session) request('/api/me').then(result => { user = result.profile; updateAccount(); }).catch(() => {});
+  async function initializeAccount() {
+    if (session) { try { user = (await request('/api/me')).profile; updateAccount(); } catch {} }
+    if (oauthRequestId) {
+      try { if (localStorage.getItem('aa-last-user')) authTab = 'login'; } catch {}
+      if (!$('account-dialog').open) $('account-dialog').showModal();
+      await showPanel();
+    }
+  }
+  initializeAccount();
 })();
