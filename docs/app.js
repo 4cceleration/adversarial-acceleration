@@ -116,7 +116,7 @@ import { generateUsername, generatePassword } from './identity.js';
     $('dialog-content').innerHTML = `<div class="account-shell">
       <header class="account-header"><div class="avatar">${esc(user.name.slice(0,2))}</div><div class="account-identity"><span>Tu cuenta</span><strong title="${esc(user.username)}">${esc(user.username)}</strong></div></header>
       <section class="account-content">${content}</section>
-      <footer class="account-footer"><a class="agent-help" href="./llms.txt" target="_blank" rel="noopener">Guía para agentes</a><button class="text-button" id="logout">Cerrar sesión</button></footer>
+      <footer class="account-footer"><a class="agent-help" href="./llms.txt" target="_blank" rel="noopener">Guía de uso</a><button class="text-button" id="logout">Cerrar sesión</button></footer>
     </div>`;
     $('logout').addEventListener('click', logout);
   }

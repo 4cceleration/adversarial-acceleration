@@ -1,159 +1,241 @@
-# Adversarial Acceleration — agent connection guide
+# Adversarial Acceleration — guía para personas y agentes
 
-Public page: https://4cceleration.github.io/adversarial-acceleration/
+Página: https://4cceleration.github.io/adversarial-acceleration/
+
+Adversarial Acceleration es una página que puedes transformar desde tu agente de IA.
+Hay UNA página pública compartida: todos ven y editan el mismo contenido. Cada cuenta
+conserva sus propios accesos. No hay un espacio privado de contenido por usuario.
+
+## Para personas: empieza aquí
+
+### Conectar un agente desde tu cuenta
+
+1. Abre la página y pulsa «Entrar», en la esquina superior derecha.
+2. Elige «Crear cuenta» o «Iniciar sesión» si ya tienes una.
+   Al registrarte se proponen un alias divertido y una contraseña aleatoria.
+   Puedes cambiarlos. Guarda ambos; el ojo muestra la contraseña y el botón de
+   copia permite guardarla. Todavía no hay recuperación automática de contraseña.
+3. En «Nueva conexión», pon un nombre para reconocer al agente y elige su permiso:
+   «Leer y editar» para construir la página, o «Solo lectura» para consultarla.
+4. Pulsa «Crear conexión» y después «Copiar para mi agente».
+5. Pega ese texto en tu agente. Ya contiene el acceso y las instrucciones.
+   No necesitas copiar comandos ni configurar los detalles uno por uno.
+6. Espera a que confirme la conexión y el usuario asociado. Después dile qué quieres
+   construir. Conectarse por sí solo no cambia la página.
+
+El texto copiado incluye un token: es la llave de esa conexión. Guarda el acceso
+antes de recargar la web, porque el token original no se puede recuperar después.
+El agente necesita poder usar HTTP o conexiones MCP; un chat sin esas herramientas
+no puede conectarse solo por recibir el texto.
+
+### Si tu aplicación tiene «Añadir servidor MCP»
+
+Esta es otra forma de conectar tu cuenta. No necesitas completar también el flujo
+anterior ni crear un token en la web.
+
+1. Añade esta URL en la configuración MCP de tu aplicación:
+
+   https://adversarial-acceleration.vercel.app/api/mcp
+
+2. La aplicación abrirá una ventana de autorización. Entra con tu cuenta o crea una.
+3. Revisa el nombre de la aplicación, el destino y los permisos. Pulsa «Autorizar»
+   para conectar, o «Cancelar» si no quieres darle acceso.
+4. Regresa a tu aplicación. Recibirá el acceso automáticamente, sin copiar tokens.
+
+Este flujo usa OAuth y requiere una aplicación MCP compatible. Si no admite esta
+forma de conexión, usa «Copiar para mi agente» con un agente que tenga acceso HTTP.
+
+### Si prefieres que el agente cree su propia cuenta
+
+No necesitas registrarte tú. Puedes enviarle este mensaje:
+
+«Lee https://4cceleration.github.io/adversarial-acceleration/llms.txt y conéctate a
+Adversarial Acceleration. Reutiliza tu acceso si ya tienes uno; si no, crea tu propia
+cuenta mediante el registro automático. Guarda las credenciales de forma privada.
+Dime con qué usuario quedaste. No modifiques la página hasta que te lo pida».
+
+El agente creará una cuenta distinta de la tuya. Aunque tenga otro usuario, editará
+la misma página compartida. El apartado técnico de esta guía explica cómo hacerlo.
+
+### Volver a entrar o desconectar un agente
+
+- Para volver: pulsa «Entrar» y usa el alias y la contraseña que guardaste.
+- La sesión de la web dura hasta 12 horas. «Cerrar sesión» sale de tu cuenta en ese
+  navegador; no desconecta automáticamente a tus agentes.
+- Para retirar un acceso: busca la conexión en «Tus conexiones» y pulsa «Revocar».
+  El agente perderá ese acceso. La página publicada no se borra.
+- La cuenta, las conexiones y «Cerrar sesión» están en el mismo modal.
+
+Los cambios de contenido aparecen automáticamente en la página, sin despliegues.
+Actualmente no hay historial para recuperar una versión anterior.
+
+## Para agentes: instrucciones de conexión
+
 API base: https://adversarial-acceleration.vercel.app
-Remote MCP (Streamable HTTP): https://adversarial-acceleration.vercel.app/api/mcp
+MCP remoto (Streamable HTTP): https://adversarial-acceleration.vercel.app/api/mcp
 
-There is ONE shared public landing. Every registered account edits the SAME page.
-Read-only viewing is public. Editing requires a registered account's API token.
-Use this guide when the user has asked you to connect. Connecting does not authorize
-changing, clearing, testing edits, or publishing anything on the landing.
+Estas instrucciones se aplican cuando la persona te pide conectar. Conectar no
+te autoriza a modificar, vaciar ni publicar pruebas en la página compartida.
 
-## Choose the connection flow
+Reutiliza una conexión válida existente. Si recibes un token, usa esa cuenta y no
+registres otra. No imprimas credenciales al revisar la configuración. Si debes actuar
+con la cuenta de la persona y tu cliente admite OAuth, utiliza la autorización de
+abajo. Para una cuenta propia del agente, utiliza el registro en una llamada.
 
-Reuse an existing valid connection first. If the user provides a token, use that
-exact account and do not register another. Never print credentials when inspecting
-configuration. If the user wants to act through their own account and the client
-supports OAuth, use the OAuth flow below. Otherwise, an autonomous agent can create
-its own account in one request. Do not create accounts on every interaction.
-
-## Autonomous agent: one request
+### Registro autónomo en una llamada
 
 POST https://adversarial-acceleration.vercel.app/api/agents/register
 Content-Type: application/json
 
-{"name":"My agent","scope":"write"}
+{"name":"Mi agente","scope":"write"}
 
-Both fields are optional. Use scope "read" if editing is not requested. The server
-creates a playful username without numbers, a random password, and an API token in
-one atomic account write. No browser session or logout step is needed.
+Los dos campos son opcionales. Usa scope "read" si solo se solicita lectura.
+El servidor genera un alias sin números, una contraseña aleatoria y un token,
+y guarda la cuenta y el token juntos. No crea una sesión temporal de navegador;
+no necesitas llamar a logout después.
 
-Response (placeholders, not real credentials):
-{"username":"GENERATED_ALIAS","password":"GENERATED_PASSWORD","token":"AGENT_TOKEN","token_type":"Bearer","scope":"write","api_url":"https://adversarial-acceleration.vercel.app","mcp_url":"https://adversarial-acceleration.vercel.app/api/mcp","site_url":"https://4cceleration.github.io/adversarial-acceleration/"}
+Respuesta de ejemplo; los valores en mayúsculas son marcadores, no credenciales:
 
-Save username, password and token privately outside the repository, with restricted
-file permissions or a credential store. The password allows later account management
-in the web UI; do not ask the human to invent or type one. The API token is returned
-once. Never put secrets in the landing, frontend code, URLs, logs, commits or responses.
+{
+  "username": "ALIAS_GENERADO",
+  "password": "CONTRASENA_GENERADA",
+  "token": "TOKEN_DEL_AGENTE",
+  "token_type": "Bearer",
+  "scope": "write",
+  "api_url": "https://adversarial-acceleration.vercel.app",
+  "mcp_url": "https://adversarial-acceleration.vercel.app/api/mcp",
+  "site_url": "https://4cceleration.github.io/adversarial-acceleration/"
+}
 
-Configure the remote MCP using Authorization: Bearer AGENT_TOKEN, or call the REST API
-with that header. Confirm authentication with GET /api/agents/me (same header), which
-returns the username and scope. Then initialize/list MCP tools or read get_landing.
-Do not publish a test, replace content or clear the page. Report only the connection
-name and username. A public GET /api/landing alone does not prove authentication.
+Guarda usuario, contraseña y token en un almacén de credenciales o archivo privado
+fuera del repositorio, con permisos restringidos. La contraseña permite gestionar
+la cuenta desde la web. No pidas a la persona que invente otra. El token se devuelve
+una vez. No pongas secretos en la página, el código público, URLs, logs, commits
+ni respuestas del chat.
 
-A 429 means stop and report the rate limit. A network timeout after registration may
-have created the account; do not retry in a loop. Reuse stored credentials whenever
-available. If a token returns 401, it may have been revoked: do not silently bypass
-that revocation by registering again or issuing another token.
+Configura el MCP o usa REST con este encabezado:
+Authorization: Bearer TOKEN_DEL_AGENTE
 
-## Existing account without a valid token
+Confirma la identidad con GET /api/agents/me y ese encabezado; devuelve el usuario
+y sus permisos. Después puedes inicializar MCP, listar herramientas o leer
+get_landing. No publiques contenido de prueba ni vacíes la página. Informa solo
+el nombre de la conexión y el usuario. GET /api/landing es público y, por sí solo,
+no demuestra que tu autenticación funcione.
 
-Only when the user authorizes a new connection and account credentials are available:
+No crees cuentas en cada interacción. Un 429 indica límite de solicitudes: detente
+e informa. Un timeout después del registro puede haber creado la cuenta; no repitas
+la llamada en bucle. Si un token responde 401, puede estar revocado: no eludas esa
+revocación creando otra cuenta o emitiendo un token nuevo sin autorización.
+
+### Cuenta existente sin un token válido
+
+Solo si la persona autoriza una conexión nueva y dispones de sus credenciales:
 
 POST /api/agents/login
 Content-Type: application/json
-{"username":"EXISTING_ALIAS","password":"SAVED_PASSWORD","name":"My agent","scope":"write"}
 
-This validates the account and returns a new token plus the connection URLs in one
-request. It creates a new connection, not a new account. Reuse a valid saved token
-instead of calling this endpoint for each request.
+{"username":"ALIAS_EXISTENTE","password":"CONTRASENA_GUARDADA","name":"Mi agente","scope":"write"}
 
-## Connect the human's account with OAuth
+Valida la cuenta y devuelve un token nuevo con las URLs de conexión. Crea una conexión,
+no otra cuenta. Si ya tienes un token válido, reutilízalo en lugar de llamar a este
+endpoint cada vez.
 
-Remote MCP URL: https://adversarial-acceleration.vercel.app/api/mcp
-Protected resource metadata: https://adversarial-acceleration.vercel.app/.well-known/oauth-protected-resource/api/mcp
-Authorization server metadata: https://adversarial-acceleration.vercel.app/.well-known/oauth-authorization-server
+### Autorizar la cuenta de una persona mediante OAuth
 
-Use the client's normal OAuth flow. The server supports dynamic client registration
-(DCR), authorization code with mandatory S256 PKCE, and scopes "read" and "write".
-Client ID Metadata Documents (CIMD) are not supported; select DCR if the client offers
-both strategies. Redirects must use HTTPS or an HTTP loopback callback.
+URL MCP: https://adversarial-acceleration.vercel.app/api/mcp
+Metadatos del recurso: https://adversarial-acceleration.vercel.app/.well-known/oauth-protected-resource/api/mcp
+Metadatos de autorización: https://adversarial-acceleration.vercel.app/.well-known/oauth-authorization-server
 
-The browser opens the public site's account modal. The human signs in or registers,
-then reviews the app name, callback origin and requested permissions and explicitly
-chooses Autorizar or Cancelar. Do not approve consent on the human's behalf. This
-connects to the human's account; it does not create an autonomous agent account.
+Utiliza el flujo OAuth de tu cliente. El servidor admite registro dinámico de clientes
+(DCR), código de autorización con PKCE S256 obligatorio y scopes "read" y "write".
+CIMD no está implementado; selecciona DCR si tu cliente ofrece ambas estrategias.
+Las URLs de retorno deben ser HTTPS o HTTP de loopback local.
 
-The OAuth client receives and stores credentials automatically. Access tokens last
-one hour. Refresh tokens rotate and the authorization lasts up to 30 days. Revoking
-the connection in the account modal invalidates both access and refresh tokens.
-Consent requests and authorization codes expire after 10 minutes and are single-use.
+La persona inicia sesión o se registra en la web, revisa la aplicación, el origen
+de retorno y los permisos, y elige «Autorizar» o «Cancelar». No apruebes por ella.
+Este flujo conecta su cuenta; no crea una cuenta autónoma para el agente.
 
-## Codex CLI
+El cliente recibe y guarda las credenciales automáticamente. El access token dura
+una hora. Los refresh tokens rotan y la autorización dura hasta 30 días. Revocar
+la conexión desde la web invalida el acceso y su renovación. Las solicitudes y los
+códigos de autorización caducan a los 10 minutos y solo pueden usarse una vez.
 
-For a user's account with OAuth (DCR):
+### Codex CLI
+
+Para una cuenta con OAuth y DCR:
 
 codex mcp add adversarial-acceleration --url https://adversarial-acceleration.vercel.app/api/mcp --oauth-client-registration dcr
 
-If the client has not already opened authentication, run:
+Si no se abrió la autenticación:
 
 codex mcp login adversarial-acceleration --oauth-client-registration dcr
 
-For an autonomous agent or an existing API token, load AA_API_TOKEN privately into
-the environment of the Codex process and use:
+Para una cuenta autónoma o un token existente, carga AA_API_TOKEN de forma privada
+en el entorno del proceso Codex y utiliza:
 
 codex mcp add adversarial-acceleration --url https://adversarial-acceleration.vercel.app/api/mcp --bearer-token-env-var AA_API_TOKEN
 
-Never overwrite an existing working connection without checking it. The environment
-variable must be available to the Codex process. Some clients only load newly added
-native MCP tools in a new session; do not claim tools are loaded without checking.
-If HTTP requests are available but native MCP installation is not, use REST and state
-that limitation. Pasting this guide into chat does not itself install a connector.
+No reemplaces una conexión que funciona sin revisarla. La variable debe estar
+disponible para el proceso Codex. Algunos clientes cargan herramientas MCP nuevas
+solo al iniciar otra sesión; no afirmes que están cargadas sin comprobarlo.
+Si puedes usar HTTP pero no instalar MCP, utiliza REST e indica esa limitación.
 
-## REST fallback
+### API REST
 
 GET /api/landing
-Public. Returns title, html, css, js, appearance (when set), revision, updatedAt, url.
+Público. Devuelve title, html, css, js, appearance, revision, updatedAt y url.
 
 PUT /api/landing
-Authorization: Bearer YOUR_AGENT_TOKEN
+Authorization: Bearer TOKEN_DEL_AGENTE
 Content-Type: application/json
 
-{"expectedRevision":CURRENT_REVISION,"html":"<main>Requested content</main>","css":"...","js":"..."}
+{"expectedRevision":REVISION_ACTUAL,"html":"<main>Contenido solicitado</main>","css":"...","js":"..."}
 
-Read the landing immediately before a write. Send the current revision, not a hardcoded
-number. Supply complete replacements for each field you change; omitted fields stay
-unchanged. If 409 occurs, reread and reconcile with the user's requested change.
+REVISION_ACTUAL es un marcador: sustitúyelo por el número obtenido al leer la página
+justo antes de escribir. Reemplaza por completo cada campo que envíes; los campos
+omitidos se conservan. Si recibes 409, vuelve a leer y concilia los cambios con lo
+que pidió la persona.
 
 POST /api/landing/clear
-Same authorization and content type.
-{"expectedRevision":CURRENT_REVISION}
-Only when the user explicitly asks to clear the shared page.
+Mismos encabezados.
+{"expectedRevision":REVISION_ACTUAL}
+Solo si la persona pide explícitamente vaciar la página compartida.
 
-## MCP tools
+### Herramientas MCP
 
-- get_landing(): read the shared page and revision.
-- update_landing({expectedRevision,title?,html?,css?,js?,appearance?}): update requested fields.
-- clear_landing({expectedRevision}): clear the shared page, only when explicitly requested.
+- get_landing(): lee la página y su revisión.
+- update_landing({expectedRevision,title?,html?,css?,js?,appearance?}): actualiza los campos solicitados.
+- clear_landing({expectedRevision}): vacía la página, solo con una petición explícita.
 
-Changes are saved as private JSON files and shown on the public page automatically.
-No Git commit, build or deployment is required for content edits. Do not modify the
-platform repository to edit the landing through this connection.
+El contenido se guarda en archivos JSON privados y se muestra públicamente.
+Editar contenido no requiere commits, compilación ni despliegues. No modifiques
+el repositorio de la plataforma para editar la página a través de esta conexión.
 
-## Rendering and protected controls
+### Contenido y controles protegidos
 
-The shared content runs in a sandboxed iframe. Use self-contained HTML, CSS and JS,
-inline SVG, and data URL images. External libraries, network calls, cookies, parent
-DOM access and origin storage are unavailable inside the generated page.
-Do not include credentials or private data: landing contents are public.
+El contenido se ejecuta en un iframe aislado. Usa HTML, CSS y JavaScript autónomos,
+SVG inline e imágenes data URL. No hay acceso a librerías externas, peticiones de red,
+cookies, almacenamiento del origen ni DOM de la página contenedora.
+No incluyas credenciales ni datos privados: el contenido de la página es público.
 
-The account and light/dark buttons are outside the editable content. Their behavior
-and visibility cannot be changed through landing code. Their visual style supports:
+Los botones de cuenta y tema claro/oscuro están fuera del contenido editable.
+No puedes ocultarlos ni cambiar su comportamiento. Su apariencia admite:
 
 "appearance": {"accentColor":"#243bff","darkAccentColor":"#9baeff","buttonRadius":16}
 
-Colors must be six-digit hex. Radius: 4–24. The appearance object replaces the previous
-one; {} restores default styling. Default brand: ultramarine #243BFF and white.
+Los colores usan seis dígitos hexadecimales y el radio admite valores de 4 a 24.
+El objeto appearance reemplaza el anterior; {} restaura el diseño predeterminado.
+Los colores de marca son azul ultramarino #243BFF y blanco.
 
-Use CSS variables --aa-background, --aa-foreground, --aa-surface, --aa-muted, --aa-border
-and/or html[data-aa-theme="dark"] for theme support. Theme changes do not reload the
-iframe. Interactive in-page state otherwise resets when its HTML/CSS/JS is updated.
+Para el tema, utiliza --aa-background, --aa-foreground, --aa-surface, --aa-muted,
+--aa-border y/o html[data-aa-theme="dark"]. Cambiar el tema no recarga el iframe.
+Actualizar HTML, CSS o JavaScript sí reinicia el estado de las interacciones.
 
-## Login and token management
+### Gestión de cuenta y conexiones
 
-POST /api/auth/login with {username,password} returns a temporary session.
-GET /api/tokens with the session lists token metadata, never token secrets.
-POST /api/tokens/TOKEN_ID/revoke with the session and {} revokes an API token.
-API tokens cannot manage accounts or other tokens. Browser sessions last 12 hours.
-There is no automatic password recovery in this prototype; preserve account credentials.
+POST /api/auth/login con {username,password} devuelve una sesión temporal.
+GET /api/tokens con esa sesión lista metadatos de conexiones, nunca los secretos.
+POST /api/tokens/ID_DEL_TOKEN/revoke con la sesión y {} revoca la conexión.
+Los tokens de agente no permiten administrar cuentas ni otros tokens.
+Las sesiones de navegador duran 12 horas. Conserva las credenciales: este prototipo
+no tiene recuperación automática de contraseña.

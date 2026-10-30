@@ -15,7 +15,7 @@ Una sola landing pública, inicialmente en blanco. Cualquier persona puede verla
 
 La interfaz ofrece un único botón de copia, sin pestañas ni bloques de configuración. El token permanece en memoria mientras esta página siga abierta. Guárdalo antes de recargar o cerrar sesión: no se almacena de forma persistente en el navegador y el servidor conserva únicamente su hash.
 
-La [guía pública para agentes](https://4cceleration.github.io/adversarial-acceleration/llms.txt) explica el alta automática en una llamada y la conexión OAuth a una cuenta existente. Necesita acceso HTTP o capacidad para configurar MCP. El modal reúne la cuenta, las conexiones y el cierre de sesión en una sola vista, sin menú lateral; las ediciones de la landing se realizan por MCP o API.
+La [guía de uso para personas y agentes](https://4cceleration.github.io/adversarial-acceleration/llms.txt) explica primero cómo crear una cuenta, conectar y revocar un agente desde la web. Después reúne las instrucciones técnicas de alta automática y OAuth. El agente necesita acceso HTTP o capacidad para configurar MCP. El modal reúne la cuenta, las conexiones y el cierre de sesión en una sola vista, sin menú lateral; las ediciones de la landing se realizan por MCP o API.
 
 Todos editan el mismo contenido. Publicar o dejar en blanco afecta a todos los visitantes. No publiques información privada. La interfaz muestra cambios automáticamente cada cinco segundos mientras está visible.
 
