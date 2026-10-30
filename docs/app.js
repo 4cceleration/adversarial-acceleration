@@ -9,7 +9,15 @@
   let user = null, landing = { title: '', html: '', css: '', js: '', revision: -1 }, timer, toastTimer, pollBusy = false;
   let panelTab = 'connections', authTab = 'register', methodTab = 'mcp', editorTab = 'html', draft = null, editorDirty = false, newToken = '';
   let registrationUsername = '';
-  const mark = '<div class="wordmark"><div class="mark">a↗</div><span>Adversarial<br>Acceleration</span></div>';
+  function icon(name) {
+    const paths = {
+      user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',
+      connections: '<path d="M9 3v4m6-4v4M7 7h10v4a5 5 0 0 1-10 0V7Zm5 9v5"/>',
+      editor: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M7 6.5h.01m3 0h.01M7 13h10m-10 3h6"/>',
+      random: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/>'
+    };
+    return `<svg class="ui-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
+  }
   async function request(path, { method = 'GET', data, auth = true } = {}) {
     const headers = { 'Content-Type': 'application/json' };
     if (auth && session) headers.Authorization = `Bearer ${session}`;
@@ -18,7 +26,7 @@
     catch { throw new Error('No se pudo conectar. Comprueba tu conexión e inténtalo de nuevo.'); }
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if (response.status === 401 && auth && session) { session = ''; sessionStorage.removeItem(sessionKey); user = null; updateAccount(); }
+      if (response.status === 401 && auth && session) { session = ''; sessionStorage.removeItem(sessionKey); user = null; newToken = ''; updateAccount(); refreshConnection(); }
       const error = new Error(result.error || `Error ${response.status}`); error.status = response.status; throw error;
     }
     return result;
@@ -65,7 +73,8 @@
   }
   function updateAccount() {
     $('account-label').textContent = user ? user.username : 'Entrar';
-    $('avatar').textContent = user ? user.name.slice(0, 2).toUpperCase() : '↗';
+    if (user) $('avatar').textContent = user.name.slice(0, 2).toUpperCase();
+    else $('avatar').innerHTML = icon('user');
   }
   function generateUsername() {
     return 'user' + Array.from(crypto.getRandomValues(new Uint8Array(5)), byte => byte.toString(16).padStart(2, '0')).join('');
@@ -75,7 +84,7 @@
     let suggestedUsername = registrationUsername;
     if (authTab === 'login') { try { suggestedUsername = localStorage.getItem('aa-last-user') || ''; } catch { suggestedUsername = ''; } }
     $('account-dialog').classList.remove('wide');
-    $('dialog-content').innerHTML = `<div class="auth-shell"><h1 id="dialog-title">Tu cuenta</h1><div class="auth-tabs" role="tablist"><button role="tab" data-auth="register" class="${authTab === 'register' ? 'active' : ''}" aria-selected="${authTab === 'register'}">Crear cuenta</button><button role="tab" data-auth="login" class="${authTab === 'login' ? 'active' : ''}" aria-selected="${authTab === 'login'}">Iniciar sesión</button></div><form id="auth-form"><div class="field"><label for="auth-username">Usuario</label><div class="input-with-action"><input id="auth-username" name="username" value="${esc(suggestedUsername)}" placeholder="Tu usuario" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_\\-]{3,32}" autocomplete="username" autocapitalize="none" spellcheck="false" required>${authTab === 'register' ? '<button id="regenerate-username" class="input-action" type="button" aria-label="Generar otro usuario" title="Generar otro usuario"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17"/></svg></button>' : ''}</div></div><div class="field"><label for="auth-password">Contraseña</label><div class="input-with-action"><input id="auth-password" name="password" type="password" placeholder="Mínimo 10 caracteres" minlength="10" maxlength="200" autocomplete="${authTab === 'register' ? 'new-password' : 'current-password'}" required><button id="toggle-password" class="input-action" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div><p id="auth-error" class="form-error" role="alert"></p><button class="primary full" type="submit">${authTab === 'register' ? 'Crear mi cuenta' : 'Entrar'} <span class="arrow">↗</span></button></form></div>`;
+    $('dialog-content').innerHTML = `<div class="auth-shell"><h1 id="dialog-title">Tu cuenta</h1><div class="auth-tabs" role="tablist"><button role="tab" data-auth="register" class="${authTab === 'register' ? 'active' : ''}" aria-selected="${authTab === 'register'}">Crear cuenta</button><button role="tab" data-auth="login" class="${authTab === 'login' ? 'active' : ''}" aria-selected="${authTab === 'login'}">Iniciar sesión</button></div><form id="auth-form"><div class="field"><label for="auth-username">Usuario</label><div class="input-with-action"><input id="auth-username" name="username" value="${esc(suggestedUsername)}" placeholder="Tu usuario" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_\\-]{3,32}" autocomplete="username" autocapitalize="none" spellcheck="false" required>${authTab === 'register' ? `<button id="regenerate-username" class="input-action" type="button" aria-label="Generar otro usuario" title="Generar otro usuario">${icon('random')}</button>` : ''}</div></div><div class="field"><label for="auth-password">Contraseña</label><div class="input-with-action"><input id="auth-password" name="password" type="password" placeholder="Mínimo 10 caracteres" minlength="10" maxlength="200" autocomplete="${authTab === 'register' ? 'new-password' : 'current-password'}" required><button id="toggle-password" class="input-action" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div><p id="auth-error" class="form-error" role="alert"></p><button class="primary full" type="submit">${authTab === 'register' ? 'Crear mi cuenta' : 'Entrar'}</button></form></div>`;
     document.querySelectorAll('[data-auth]').forEach(button => button.addEventListener('click', () => { authTab = button.dataset.auth; showAuth(); }));
     $('auth-username').addEventListener('input', () => { if (authTab === 'register') registrationUsername = $('auth-username').value; });
     $('regenerate-username')?.addEventListener('click', () => { registrationUsername = generateUsername(); $('auth-username').value = registrationUsername; });
@@ -92,17 +101,17 @@
       try {
         const input = Object.fromEntries(new FormData(event.target));
         const result = await request(`/api/auth/${authTab}`, { method: 'POST', data: input, auth: false });
-        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; updateAccount(); panelTab = 'connections'; await showPanel();
+        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; newToken = ''; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; updateAccount(); panelTab = 'connections'; await showPanel();
       } catch (e) { if ($('auth-error')) $('auth-error').textContent = e.message; }
       finally { button.disabled = false; }
     });
   }
   function panelLayout(content) {
     $('account-dialog').classList.add('wide');
-    $('dialog-content').innerHTML = `<div class="panel-shell"><aside class="panel-sidebar"><div class="user-card"><div class="avatar">${esc(user.name.slice(0,2))}</div><div><div class="user-name">${esc(user.username)}</div></div></div><nav class="panel-nav" aria-label="Tu cuenta"><button data-panel="connections" class="${panelTab === 'connections' ? 'active' : ''}"><span>↗</span> Conexiones</button><button data-panel="editor" class="${panelTab === 'editor' ? 'active' : ''}"><span>⌘</span> Editar página</button><button data-panel="profile" class="${panelTab === 'profile' ? 'active' : ''}"><span>○</span> Mi cuenta</button></nav></aside><section class="panel-main">${content}</section></div>`;
+    $('dialog-content').innerHTML = `<div class="panel-shell"><aside class="panel-sidebar"><div class="user-card"><div class="avatar">${esc(user.name.slice(0,2))}</div><div><div class="user-name">${esc(user.username)}</div></div></div><nav class="panel-nav" aria-label="Tu cuenta"><button data-panel="connections" class="${panelTab === 'connections' ? 'active' : ''}"><span class="nav-icon">${icon('connections')}</span> Conexiones</button><button data-panel="editor" class="${panelTab === 'editor' ? 'active' : ''}"><span class="nav-icon">${icon('editor')}</span> Editar página</button><button data-panel="profile" class="${panelTab === 'profile' ? 'active' : ''}"><span class="nav-icon">${icon('user')}</span> Mi cuenta</button></nav></aside><section class="panel-main">${content}</section></div>`;
     document.querySelectorAll('[data-panel]').forEach(button => button.addEventListener('click', async () => {
       if (editorDirty && !confirm('Tienes cambios sin publicar. ¿Descartarlos?')) return;
-      editorDirty = false; draft = null; newToken = ''; panelTab = button.dataset.panel; await showPanel();
+      editorDirty = false; draft = null; panelTab = button.dataset.panel; await showPanel();
     }));
   }
   async function showPanel() {
@@ -115,25 +124,43 @@
     try { await navigator.clipboard.writeText(text); toast('Copiado'); }
     catch { toast('No se pudo copiar. Selecciona el texto y cópialo manualmente.'); }
   }
-  function connectionInstructions() {
+  function connectionConfig() {
     const mcpUrl = `${base}/api/mcp`;
-    if (methodTab === 'mcp') return `<p class="field-label connection-label">URL del servidor</p><div class="copy-row"><code>${esc(mcpUrl)}</code><button class="secondary" id="copy-mcp">Copiar URL</button></div><p class="tiny">Authorization: Bearer TU_TOKEN</p>`;
-    if (methodTab === 'codex') return `<div class="code-box"><pre>export AA_API_TOKEN='TU_TOKEN'
+    if (!newToken) return '';
+    if (methodTab === 'mcp') return JSON.stringify({ mcpServers: { 'adversarial-acceleration': { url: mcpUrl, headers: { Authorization: `Bearer ${newToken}` } } } }, null, 2);
+    if (methodTab === 'codex') return `export AA_API_TOKEN='${newToken}'
 codex mcp add adversarial \\
-  --url ${esc(mcpUrl)} \\
-  --bearer-token-env-var AA_API_TOKEN</pre></div>`;
-    return `<div class="code-box"><pre>GET ${esc(base)}/api/landing
+  --url ${mcpUrl} \\
+  --bearer-token-env-var AA_API_TOKEN`;
+    return `GET ${base}/api/landing
 
-PUT ${esc(base)}/api/landing
-Authorization: Bearer TU_TOKEN
+PUT ${base}/api/landing
+Authorization: Bearer ${newToken}
 Content-Type: application/json
 
 {
   "expectedRevision": ${Math.max(0, landing.revision)},
-  "html": "&lt;h1&gt;Hola, mundo.&lt;/h1&gt;",
+  "html": "<h1>Hola, mundo.</h1>",
   "css": "body { padding: 80px; }",
   "js": ""
-}</pre></div>`;
+}`;
+  }
+  function connectionInstructions() {
+    const urlField = `<p class="field-label connection-label">URL del servidor</p><div class="copy-row"><code>${esc(base)}/api/mcp</code><button class="secondary" id="copy-mcp">Copiar URL</button></div>`;
+    if (!newToken) return `${methodTab === 'mcp' ? urlField : ''}<p class="tiny">Crea un token para completar la conexión.</p>`;
+    if (methodTab === 'mcp') return `${urlField}<p class="field-label connection-label token-label">Authorization</p><div class="copy-row"><code>Bearer ${esc(newToken)}</code><button class="secondary" id="copy-authorization">Copiar valor</button></div><div class="action-row"><button class="secondary" id="copy-config">Copiar configuración MCP</button></div>`;
+    return `<div class="code-box"><pre>${esc(connectionConfig())}</pre></div><div class="action-row"><button class="secondary" id="copy-config">${methodTab === 'codex' ? 'Copiar comando' : 'Copiar ejemplo'}</button></div>`;
+  }
+  function refreshConnection() {
+    if ($('instructions')) {
+      $('instructions').innerHTML = connectionInstructions();
+      $('copy-mcp')?.addEventListener('click', () => copy(`${base}/api/mcp`));
+      $('copy-authorization')?.addEventListener('click', () => copy(`Bearer ${newToken}`));
+      $('copy-config')?.addEventListener('click', () => { if (newToken) copy(connectionConfig()); });
+    }
+    if ($('agent-guide-text')) $('agent-guide-text').textContent = agentPrompt(newToken);
+    if ($('agent-guide-description')) $('agent-guide-description').textContent = newToken ? 'Incluye el token de tu cuenta.' : 'El agente crea su propia cuenta y token.';
+    showSecret();
   }
   function agentPrompt(token = '') {
     const guideUrl = new URL('./llms.txt', location.href).href;
@@ -152,24 +179,24 @@ Solo conecta y lee la landing para confirmar el acceso. No modifiques, limpies n
 Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar secretos.`;
   }
   async function showConnections() {
-    panelLayout(`<h2 id="dialog-title">Conexiones</h2><div class="agent-connect"><div><strong>Conectar un agente</strong><p>El agente crea su propia cuenta y token.</p></div><button id="copy-agent-guide" class="primary">Copiar texto para LLM ↗</button><details class="agent-guide"><summary>Ver instrucciones</summary><pre>${esc(agentPrompt())}</pre></details></div><div class="section"><form id="token-form" class="token-form"><div class="field"><label for="token-name">Nombre de la conexión</label><input id="token-name" name="name" placeholder="Mi agente" maxlength="60" required></div><div class="field"><label for="token-scope">Permiso</label><select id="token-scope" name="scope"><option value="write">Leer y editar</option><option value="read">Solo lectura</option></select></div><button class="primary" type="submit">Crear token ↗</button></form><p id="token-error" class="form-error" role="alert"></p><div id="new-token"></div></div><div class="section"><div class="method-tabs"><button data-method="mcp" class="${methodTab === 'mcp' ? 'active' : ''}">MCP remoto</button><button data-method="codex" class="${methodTab === 'codex' ? 'active' : ''}">Codex CLI</button><button data-method="api" class="${methodTab === 'api' ? 'active' : ''}">API HTTP</button></div><div id="instructions">${connectionInstructions()}</div></div><div class="section"><div class="section-head">Tokens activos</div><div id="tokens-list" class="token-list"><p class="tiny">Cargando…</p></div></div>`);
-    $('copy-agent-guide').addEventListener('click', () => copy(agentPrompt()));
-    document.querySelectorAll('[data-method]').forEach(button => button.addEventListener('click', () => { methodTab = button.dataset.method; document.querySelectorAll('[data-method]').forEach(b => b.classList.toggle('active', b === button)); $('instructions').innerHTML = connectionInstructions(); bindCopyMcp(); }));
-    bindCopyMcp();
+    panelLayout(`<h2 id="dialog-title">Conexiones</h2><div class="agent-connect"><div><strong>Conectar un agente</strong><p id="agent-guide-description">El agente crea su propia cuenta y token.</p></div><button id="copy-agent-guide" class="primary">Copiar texto para LLM</button><details class="agent-guide"><summary>Ver instrucciones</summary><pre id="agent-guide-text">${esc(agentPrompt(newToken))}</pre></details></div><div class="section"><form id="token-form" class="token-form"><div class="field"><label for="token-name">Nombre de la conexión</label><input id="token-name" name="name" placeholder="Mi agente" maxlength="60" required></div><div class="field"><label for="token-scope">Permiso</label><select id="token-scope" name="scope"><option value="write">Leer y editar</option><option value="read">Solo lectura</option></select></div><button class="primary" type="submit">Crear token</button></form><p id="token-error" class="form-error" role="alert"></p><div id="new-token"></div></div><div class="section"><div class="method-tabs"><button data-method="mcp" class="${methodTab === 'mcp' ? 'active' : ''}">MCP remoto</button><button data-method="codex" class="${methodTab === 'codex' ? 'active' : ''}">Codex CLI</button><button data-method="api" class="${methodTab === 'api' ? 'active' : ''}">API HTTP</button></div><div id="instructions">${connectionInstructions()}</div></div><div class="section"><div class="section-head">Tokens activos</div><div id="tokens-list" class="token-list"><p class="tiny">Cargando…</p></div></div>`);
+    $('copy-agent-guide').addEventListener('click', () => copy(agentPrompt(newToken)));
+    document.querySelectorAll('[data-method]').forEach(button => button.addEventListener('click', () => { methodTab = button.dataset.method; document.querySelectorAll('[data-method]').forEach(b => b.classList.toggle('active', b === button)); refreshConnection(); }));
+    refreshConnection();
     $('token-form').addEventListener('submit', async event => {
       event.preventDefault(); const button = event.target.querySelector('button'); button.disabled = true; $('token-error').textContent = '';
       try {
         const result = await request('/api/tokens', { method: 'POST', data: Object.fromEntries(new FormData(event.target)) });
-        newToken = result.token; showSecret(); event.target.reset(); await loadTokens();
+        newToken = result.token; refreshConnection(); event.target.reset(); await loadTokens();
       } catch (e) { $('token-error').textContent = e.message; }
       finally { button.disabled = false; }
     });
-    showSecret(); await loadTokens();
+    await loadTokens();
   }
-  function bindCopyMcp() { $('copy-mcp')?.addEventListener('click', () => copy(`${base}/api/mcp`)); }
   function showSecret() {
-    if (!newToken || !$('new-token')) return;
-    $('new-token').innerHTML = `<div class="secret-box"><p>Token creado · solo se muestra una vez</p><code>${esc(newToken)}</code><div class="action-row"><button class="secondary" id="copy-token">Copiar token</button><button class="secondary" id="copy-token-guide">Copiar conexión para LLM</button></div><p class="tiny">La conexión copiada incluye este token.</p></div>`;
+    if (!$('new-token')) return;
+    if (!newToken) { $('new-token').innerHTML = ''; return; }
+    $('new-token').innerHTML = `<div class="secret-box"><p>Token listo · guárdalo antes de recargar</p><code>${esc(newToken)}</code><div class="action-row"><button class="secondary" id="copy-token">Copiar token</button><button class="secondary" id="copy-token-guide">Copiar conexión para LLM</button></div><p class="tiny">La conexión copiada incluye este token.</p></div>`;
     $('copy-token').addEventListener('click', () => copy(newToken));
     $('copy-token-guide').addEventListener('click', () => copy(agentPrompt(newToken)));
   }
@@ -180,7 +207,7 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
       document.querySelectorAll('[data-revoke]').forEach(button => button.addEventListener('click', async () => {
         if (!confirm('¿Revocar este token? El agente perderá el acceso.')) return;
         button.disabled = true;
-        try { await request(`/api/tokens/${button.dataset.revoke}/revoke`, { method: 'POST', data: {} }); newToken = ''; if ($('new-token')) $('new-token').innerHTML = ''; await loadTokens(); toast('Token revocado'); }
+        try { await request(`/api/tokens/${button.dataset.revoke}/revoke`, { method: 'POST', data: {} }); newToken = ''; refreshConnection(); await loadTokens(); toast('Token revocado'); }
         catch (e) { toast(e.message); button.disabled = false; }
       }));
     } catch (e) { if ($('tokens-list')) $('tokens-list').innerHTML = `<p class="form-error">${esc(e.message)}</p>`; }
@@ -190,7 +217,7 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
       try { draft = await request('/api/landing', { auth: false }); }
       catch (e) { toast(e.message); return; }
     }
-    panelLayout(`<h2 id="dialog-title">Editar página</h2><div class="section"><div class="field"><label for="page-title">Título de la página</label><input id="page-title" value="${esc(draft.title)}" maxlength="100" placeholder="Una nueva idea"></div><div class="editor-tabs"><button data-code="html" class="${editorTab === 'html' ? 'active' : ''}">HTML</button><button data-code="css" class="${editorTab === 'css' ? 'active' : ''}">CSS</button><button data-code="js" class="${editorTab === 'js' ? 'active' : ''}">JavaScript</button></div><label class="field-label" for="code-editor" hidden>Código de la landing</label><textarea id="code-editor" class="code-editor" aria-label="Código ${editorTab.toUpperCase()}" spellcheck="false" placeholder="${editorTab === 'html' ? '<main>Tu próxima idea empieza aquí.</main>' : editorTab === 'css' ? 'body { padding: 80px; }' : '// Haz tu página interactiva'}">${esc(draft[editorTab])}</textarea><p id="editor-error" class="form-error" role="alert"></p><div class="action-row"><button id="preview-button" class="secondary">Vista previa</button><span class="spacer"></span><button id="publish-button" class="primary">Publicar cambios ↗</button></div><iframe id="preview-frame" class="preview" sandbox="allow-scripts" title="Vista previa privada" hidden></iframe><div class="action-row"><button id="reload-editor" class="text-button">Cargar página actual</button><button id="export-button" class="text-button">Exportar HTML</button><span class="spacer"></span><button id="clear-button" class="text-button danger">Dejar en blanco</button></div></div>`);
+    panelLayout(`<h2 id="dialog-title">Editar página</h2><div class="section"><div class="field"><label for="page-title">Título de la página</label><input id="page-title" value="${esc(draft.title)}" maxlength="100" placeholder="Una nueva idea"></div><div class="editor-tabs"><button data-code="html" class="${editorTab === 'html' ? 'active' : ''}">HTML</button><button data-code="css" class="${editorTab === 'css' ? 'active' : ''}">CSS</button><button data-code="js" class="${editorTab === 'js' ? 'active' : ''}">JavaScript</button></div><label class="field-label" for="code-editor" hidden>Código de la landing</label><textarea id="code-editor" class="code-editor" aria-label="Código ${editorTab.toUpperCase()}" spellcheck="false" placeholder="${editorTab === 'html' ? '<main>Tu próxima idea empieza aquí.</main>' : editorTab === 'css' ? 'body { padding: 80px; }' : '// Haz tu página interactiva'}">${esc(draft[editorTab])}</textarea><p id="editor-error" class="form-error" role="alert"></p><div class="action-row"><button id="preview-button" class="secondary">Vista previa</button><span class="spacer"></span><button id="publish-button" class="primary">Publicar cambios</button></div><iframe id="preview-frame" class="preview" sandbox="allow-scripts" title="Vista previa privada" hidden></iframe><div class="action-row"><button id="reload-editor" class="text-button">Cargar página actual</button><button id="export-button" class="text-button">Exportar HTML</button><span class="spacer"></span><button id="clear-button" class="text-button danger">Dejar en blanco</button></div></div>`);
     $('code-editor').addEventListener('input', () => { draft[editorTab] = $('code-editor').value; editorDirty = true; });
     $('page-title').addEventListener('input', () => { draft.title = $('page-title').value; editorDirty = true; });
     document.querySelectorAll('[data-code]').forEach(button => button.addEventListener('click', () => { editorTab = button.dataset.code; document.querySelectorAll('[data-code]').forEach(b => b.classList.toggle('active', b === button)); $('code-editor').value = draft[editorTab]; $('code-editor').setAttribute('aria-label', `Código ${editorTab.toUpperCase()}`); }));
@@ -231,10 +258,10 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
     }
     await showPanel();
   });
-  function mayClose(event) { if (editorDirty && !confirm('¿Cerrar sin publicar tus cambios?')) { event?.preventDefault(); return; } editorDirty = false; draft = null; newToken = ''; $('account-dialog').close(); }
+  function mayClose(event) { if (editorDirty && !confirm('¿Cerrar sin publicar tus cambios?')) { event?.preventDefault(); return; } editorDirty = false; draft = null; $('account-dialog').close(); }
   $('close-dialog').addEventListener('click', mayClose);
   $('account-dialog').addEventListener('cancel', mayClose);
-  $('account-dialog').addEventListener('close', () => { newToken = ''; $('dialog-content').innerHTML = ''; });
+  $('account-dialog').addEventListener('close', () => { $('dialog-content').innerHTML = ''; });
   document.addEventListener('keydown', event => { if ((event.metaKey || event.ctrlKey) && event.key === 's' && $('account-dialog').open && panelTab === 'editor' && user) { event.preventDefault(); publish(); } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
   $('theme-toggle').addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));

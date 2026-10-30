@@ -60,6 +60,7 @@
 .method-tabs button{flex:1;text-align:center;padding:8px;border:0}
 .method-tabs button.active{background:white;color:var(--brand);box-shadow:0 1px 4px #243bff0d}
 .connection-label{margin-bottom:8px}
+.token-label{margin-top:16px}
 .form-error:empty{display:none}
 .empty{padding:17px;text-align:center;background:#fafbff;border:1px solid var(--line)}
 .account-detail strong{font-weight:500;overflow-wrap:anywhere}
@@ -83,3 +84,41 @@
 .agent-guide pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;font-size:10px;line-height:1.7;margin:12px 0 0;color:var(--ink)}
 :root[data-theme="dark"] .agent-connect{background:#13214a;border-color:#30457c}
 :root[data-theme="dark"] .agent-guide pre{background:#0b152f}
+
+/* Translucent controls with subtle glass edges. */
+:root{--glass:rgba(255,255,255,.7);--glass-hover:rgba(255,255,255,.92);--glass-edge:rgba(255,255,255,.9);--glass-shadow:0 4px 14px #1c35a30a,inset 0 1px 0 #ffffffb3}
+dialog{background:linear-gradient(145deg,#ffffffed,#f3f6ffe8);border-color:var(--glass-edge);backdrop-filter:blur(28px) saturate(140%);-webkit-backdrop-filter:blur(28px) saturate(140%);box-shadow:0 28px 90px #122d6b2b,inset 0 1px 0 #fff}
+dialog::backdrop{background:#13236b14;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px)}
+.account-dock{background:#ffffffad;border:1px solid var(--glass-edge);box-shadow:0 6px 24px #18309e12,inset 0 1px 0 #fff;backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%)}
+.account-trigger,.theme-toggle,.secondary,.input-action,.close-dialog{background:var(--glass);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.account-trigger:hover,.theme-toggle:hover,.secondary:hover,.input-action:hover,.close-dialog:hover{background:var(--glass-hover)}
+.primary{background:linear-gradient(155deg,#4b60ffed,#243bffe8);border:1px solid #6375ff;box-shadow:0 5px 16px #243bff20,inset 0 1px 0 #ffffff4d;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.primary:hover{background:linear-gradient(155deg,#4258ff,#1b30ee);border-color:#6678ff}
+.panel-sidebar{background:#edf2ff80;border-right-color:#dfe6f280}
+.panel-nav button{gap:10px}
+.nav-icon{display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;border-radius:9px;background:var(--glass);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);color:var(--accent)}
+.ui-icon{display:block;flex-shrink:0}
+.panel-nav button.active{background:#e7edff99;box-shadow:inset 0 1px 0 #ffffffb3}
+.avatar,.user-card .avatar{background:linear-gradient(145deg,#ffffffc4,#dfe6ffc7);border:1px solid var(--glass-edge);box-shadow:var(--glass-shadow);color:var(--brand)}
+.auth-tabs,.method-tabs,.editor-tabs{background:#eaf0ff73;border-color:#dfe6f29e}
+.auth-tabs button.active,.method-tabs button.active,.editor-tabs button.active{background:var(--glass);box-shadow:var(--glass-shadow)}
+.agent-connect{background:linear-gradient(135deg,#ffffff99,#e9efff8c);border-color:var(--glass-edge);box-shadow:var(--glass-shadow)}
+.copy-row,.code-box,.field input,.field select,.field textarea{background:#ffffff9c}
+.secret-box{background:#edf2ffb3;border-color:#d8e1ff}
+:root[data-theme="dark"]{--glass:rgba(48,66,120,.42);--glass-hover:rgba(65,85,146,.55);--glass-edge:rgba(170,192,255,.18);--glass-shadow:0 4px 14px #00000014,inset 0 1px 0 #c6d5ff12}
+:root[data-theme="dark"] dialog{background:linear-gradient(145deg,#152144ed,#0d1736e8);border-color:var(--glass-edge);box-shadow:0 28px 90px #0006,inset 0 1px 0 #d5e0ff14}
+:root[data-theme="dark"] dialog::backdrop{background:#03091a66}
+:root[data-theme="dark"] .account-dock{background:#142042ad;border-color:var(--glass-edge);box-shadow:0 6px 24px #0003,inset 0 1px 0 #d5e0ff14}
+:root[data-theme="dark"] .account-trigger,:root[data-theme="dark"] .theme-toggle,:root[data-theme="dark"] .secondary,:root[data-theme="dark"] .input-action,:root[data-theme="dark"] .close-dialog{background:var(--glass);border-color:var(--glass-edge)}
+:root[data-theme="dark"] .account-trigger:hover,:root[data-theme="dark"] .theme-toggle:hover,:root[data-theme="dark"] .secondary:hover,:root[data-theme="dark"] .input-action:hover,:root[data-theme="dark"] .close-dialog:hover{background:var(--glass-hover)}
+:root[data-theme="dark"] .primary{background:linear-gradient(155deg,#5a70fff0,#324cffd9);border-color:#8898ff66;box-shadow:0 5px 18px #001ba52e,inset 0 1px 0 #ffffff38}
+:root[data-theme="dark"] .primary:hover{background:linear-gradient(155deg,#6a7eff,#415bff)}
+:root[data-theme="dark"] .panel-sidebar{background:#0a143373}
+:root[data-theme="dark"] .panel-nav button.active{background:#34497c59;box-shadow:inset 0 1px 0 #ffffff14}
+:root[data-theme="dark"] .avatar,:root[data-theme="dark"] .user-card .avatar{background:linear-gradient(145deg,#526bc580,#29438173);color:#dde5ff}
+:root[data-theme="dark"] .auth-tabs,:root[data-theme="dark"] .method-tabs,:root[data-theme="dark"] .editor-tabs{background:#09132a66;border-color:var(--glass-edge)}
+:root[data-theme="dark"] .auth-tabs button.active,:root[data-theme="dark"] .method-tabs button.active,:root[data-theme="dark"] .editor-tabs button.active{background:var(--glass);box-shadow:var(--glass-shadow)}
+:root[data-theme="dark"] .agent-connect{background:linear-gradient(135deg,#2c407559,#20336066);border-color:var(--glass-edge)}
+:root[data-theme="dark"] .copy-row,:root[data-theme="dark"] .code-box,:root[data-theme="dark"] .field input,:root[data-theme="dark"] .field select,:root[data-theme="dark"] .field textarea{background:#0c17338c}
+:root[data-theme="dark"] .secret-box{background:#23386780;border-color:var(--glass-edge)}
+@media(max-width:700px){.panel-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.panel-nav button{flex-direction:column;justify-content:center;gap:6px;padding:8px 3px;font-size:10px;white-space:nowrap}.nav-icon{width:25px;height:25px;border-radius:8px}}
