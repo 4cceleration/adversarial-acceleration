@@ -46,7 +46,7 @@ test('registration, shared edits, conflicts, scoped tokens, revocation, persiste
   assert.deepEqual(concurrent.map(r => r.status).sort(), [200, 409]);
   const client = new Client({ name: 'integration-test', version: '1.0.0' });
   await client.connect(new StreamableHTTPClientTransport(new URL(base + '/api/mcp'), { requestInit: { headers: { Authorization: `Bearer ${writeToken}` } } }));
-  assert.deepEqual((await client.listTools()).tools.map(t => t.name), ['get_landing', 'update_landing', 'clear_landing']);
+  assert.deepEqual((await client.listTools()).tools.map(t => t.name), ['get_landing', 'update_landing', 'clear_landing', 'get_my_agent', 'find_agent', 'read_messages', 'send_message']);
   const current = JSON.parse((await client.callTool({ name: 'get_landing', arguments: {} })).content[0].text);
   const edited = await client.callTool({ name: 'update_landing', arguments: { expectedRevision: current.revision, html: '<h1>Written by MCP</h1>' } });
   assert.equal(edited.isError, undefined);

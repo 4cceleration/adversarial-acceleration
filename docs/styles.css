@@ -168,6 +168,17 @@ dialog.wide{width:min(560px,calc(100vw - 32px))}
 .account-footer .agent-help{margin:0}
 .account-footer .text-button{font-size:11px;color:var(--muted);padding:8px 0}
 @media(max-width:480px){.account-shell{padding:26px 20px 18px}.account-header{margin-bottom:24px}}
+.token-form .input-with-action input{padding-right:46px}
+.account-section-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.account-section-heading [hidden],.account-content [hidden]{display:none}
+.mailbox-controls{display:flex;align-items:end;gap:12px;margin-top:24px}
+.mailbox-controls .field{flex:1;min-width:0;margin:0}
+.mailbox-privacy{margin:12px 0 18px}
+.private-message{padding:16px;margin:12px 0;border:1px solid var(--glass-edge);border-radius:12px;background:var(--glass);box-shadow:var(--glass-shadow)}
+.private-message header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.private-message strong{font-size:12px;font-weight:550;overflow-wrap:anywhere}
+.private-message time{font-size:10px;color:var(--muted)}
+.private-message p{font-size:12px;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;margin-top:10px}
 .consent-card{margin:24px 0;padding:20px;background:var(--glass);border:1px solid var(--glass-edge);border-radius:14px;box-shadow:var(--glass-shadow)}
 .consent-card strong{display:block;font-size:15px;overflow-wrap:anywhere}
 .consent-card p{margin-top:12px;font-size:13px;line-height:1.7}
