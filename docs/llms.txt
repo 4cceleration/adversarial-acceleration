@@ -14,9 +14,11 @@ changing, clearing, testing edits, or publishing anything on the landing.
 1. Reuse an existing valid Adversarial Acceleration connection if one is configured.
    Never print credentials while inspecting configuration.
 2. If no connection exists, create your own technical account using the API below.
-   This is a separate agent account, not the human user's account. Generate a username
-   such as "agent" + 12 cryptographically random hexadecimal characters, without
-   underscores. Generate a strong random password locally (at least 24 characters).
+   This is a separate agent account, not the human user's account. Generate a playful alias
+   by randomly combining words, such as an animal, an adjective and a funny ending.
+   Use only lowercase ASCII letters, no numbers or underscores, and at most 32
+   characters (for example, "mapacheninjadelcaos"; generate your own combination).
+   Generate a strong random password locally (at least 24 characters).
 3. Register:
 
    POST /api/auth/register

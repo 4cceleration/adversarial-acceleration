@@ -7,13 +7,13 @@
   let theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   let session = sessionStorage.getItem(sessionKey) || '';
   let user = null, landing = { title: '', html: '', css: '', js: '', revision: -1 }, timer, toastTimer, pollBusy = false;
-  let panelTab = 'connections', authTab = 'register', methodTab = 'mcp', editorTab = 'html', draft = null, editorDirty = false, newToken = '';
+  let panelTab = 'connections', authTab = 'register', methodTab = 'mcp', newToken = '', newTokenName = '';
   let registrationUsername = '', registrationPassword = '';
   function icon(name) {
     const paths = {
       user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',
       connections: '<path d="M9 3v4m6-4v4M7 7h10v4a5 5 0 0 1-10 0V7Zm5 9v5"/>',
-      editor: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M7 6.5h.01m3 0h.01M7 13h10m-10 3h6"/>',
+      check: '<path d="m5 12 4 4L19 6"/>',
       random: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/>',
       copy: '<rect x="8" y="8" width="12" height="12" rx="3"/><path d="M15 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>'
     };
@@ -27,7 +27,7 @@
     catch { throw new Error('No se pudo conectar. Comprueba tu conexión e inténtalo de nuevo.'); }
     const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if (response.status === 401 && auth && session) { session = ''; sessionStorage.removeItem(sessionKey); user = null; newToken = ''; updateAccount(); refreshConnection(); }
+      if (response.status === 401 && auth && session) { session = ''; sessionStorage.removeItem(sessionKey); user = null; newToken = ''; newTokenName = ''; updateAccount(); showSecret(); }
       const error = new Error(result.error || `Error ${response.status}`); error.status = response.status; throw error;
     }
     return result;
@@ -42,7 +42,7 @@
     button.setAttribute('aria-label', label); button.title = label; button.setAttribute('aria-pressed', String(theme === 'dark'));
     button.innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${theme === 'dark' ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/>' : '<path d="M20.7 13.3A9 9 0 0 1 10.7 3.3a9 9 0 1 0 10 10Z"/>'}</svg>`;
     // Send only a visual preference. Do not reload the iframe or reset its state.
-    for (const frame of [$('landing-frame'), $('preview-frame')]) frame?.contentWindow?.postMessage({ type: 'aa:theme', theme }, '*');
+    $('landing-frame')?.contentWindow?.postMessage({ type: 'aa:theme', theme }, '*');
   }
   function applyAppearance(value = {}) {
     const style = document.documentElement.style;
@@ -78,7 +78,13 @@
     else $('avatar').innerHTML = icon('user');
   }
   function generateUsername() {
-    return 'user' + Array.from(crypto.getRandomValues(new Uint8Array(5)), byte => byte.toString(16).padStart(2, '0')).join('');
+    const words = [
+      ['mapache', 'capibara', 'flan', 'taco', 'pato', 'gato', 'pulpo', 'kiwi', 'nugget', 'queso', 'churro', 'duende', 'pepino', 'pinguino', 'aguacate', 'cactus', 'panda', 'robot', 'yeti', 'mango', 'banano', 'burrito', 'gnomo', 'dragon', 'conejo', 'waffle', 'nacho', 'tamal', 'coco', 'pollo', 'erizo', 'mochi'],
+      ['ninja', 'cosmico', 'pirata', 'zombi', 'travieso', 'dramatico', 'galactico', 'bailarin', 'chismoso', 'distraido', 'dormilon', 'picante', 'rebelde', 'mistico', 'electrico', 'supremo', 'torpe', 'veloz', 'zen', 'salvaje', 'millonario', 'espacial', 'invisible', 'tropical', 'filosofo', 'mafioso', 'volador', 'legendario', 'divino', 'cantarin', 'furtivo', 'elegante'],
+      ['delcaos', 'delwifi', 'delpan', 'delmar', 'delcafe', 'delcosmos', 'delbarrio', 'delsofa', 'delte', 'delmeme', 'delparque', 'delmetro', 'delclub', 'delbosque', 'delrio', 'delbar', 'sinprisa', 'sinmapa', 'sinsueno', 'sinplan', 'conflow', 'conestilo', 'conhambre', 'conpijama', 'enpatines', 'enorbita', 'enfiesta', 'envacacion', 'debolsillo', 'deguardia', 'deincognito', 'delviernes']
+    ];
+    const random = crypto.getRandomValues(new Uint8Array(words.length));
+    return words.map((list, index) => list[random[index] & 31]).join('');
   }
   function generatePassword() {
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@';
@@ -110,23 +116,21 @@
       try {
         const input = Object.fromEntries(new FormData(event.target));
         const result = await request(`/api/auth/${authTab}`, { method: 'POST', data: input, auth: false });
-        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; newToken = ''; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; registrationPassword = ''; updateAccount(); panelTab = 'connections'; await showPanel();
+        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; newToken = ''; newTokenName = ''; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; registrationPassword = ''; updateAccount(); panelTab = 'connections'; await showPanel();
       } catch (e) { if ($('auth-error')) $('auth-error').textContent = e.message; }
       finally { button.disabled = false; }
     });
   }
   function panelLayout(content) {
     $('account-dialog').classList.add('wide');
-    $('dialog-content').innerHTML = `<div class="panel-shell"><aside class="panel-sidebar"><div class="user-card"><div class="avatar">${esc(user.name.slice(0,2))}</div><div><div class="user-name">${esc(user.username)}</div></div></div><nav class="panel-nav" aria-label="Tu cuenta"><button data-panel="connections" class="${panelTab === 'connections' ? 'active' : ''}"><span class="nav-icon">${icon('connections')}</span> Conexiones</button><button data-panel="editor" class="${panelTab === 'editor' ? 'active' : ''}"><span class="nav-icon">${icon('editor')}</span> Editar página</button><button data-panel="profile" class="${panelTab === 'profile' ? 'active' : ''}"><span class="nav-icon">${icon('user')}</span> Mi cuenta</button></nav></aside><section class="panel-main">${content}</section></div>`;
+    $('dialog-content').innerHTML = `<div class="panel-shell"><aside class="panel-sidebar"><div class="user-card"><div class="avatar">${esc(user.name.slice(0,2))}</div><div><div class="user-name">${esc(user.username)}</div></div></div><nav class="panel-nav" aria-label="Tu cuenta"><button data-panel="connections" class="${panelTab === 'connections' ? 'active' : ''}"><span class="nav-icon">${icon('connections')}</span> Conexiones</button><button data-panel="profile" class="${panelTab === 'profile' ? 'active' : ''}"><span class="nav-icon">${icon('user')}</span> Mi cuenta</button></nav></aside><section class="panel-main">${content}</section></div>`;
     document.querySelectorAll('[data-panel]').forEach(button => button.addEventListener('click', async () => {
-      if (editorDirty && !confirm('Tienes cambios sin publicar. ¿Descartarlos?')) return;
-      editorDirty = false; draft = null; panelTab = button.dataset.panel; await showPanel();
+      panelTab = button.dataset.panel; await showPanel();
     }));
   }
   async function showPanel() {
     if (!user) { showAuth(); return; }
     if (panelTab === 'connections') await showConnections();
-    else if (panelTab === 'editor') await showEditor();
     else showProfile();
   }
   async function copy(text) {
@@ -167,9 +171,6 @@ Content-Type: application/json
       $('copy-authorization')?.addEventListener('click', () => copy(`Bearer ${newToken}`));
       $('copy-config')?.addEventListener('click', () => { if (newToken) copy(connectionConfig()); });
     }
-    if ($('agent-guide-text')) $('agent-guide-text').textContent = agentPrompt(newToken);
-    if ($('agent-guide-description')) $('agent-guide-description').textContent = newToken ? 'Incluye el token de tu cuenta.' : 'El agente crea su propia cuenta y token.';
-    showSecret();
   }
   function agentPrompt(token = '') {
     const guideUrl = new URL('./llms.txt', location.href).href;
@@ -188,16 +189,29 @@ Solo conecta y lee la landing para confirmar el acceso. No modifiques, limpies n
 Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar secretos.`;
   }
   async function showConnections() {
-    panelLayout(`<h2 id="dialog-title">Conexiones</h2><div class="agent-connect"><div><strong>Conectar un agente</strong><p id="agent-guide-description">El agente crea su propia cuenta y token.</p></div><button id="copy-agent-guide" class="primary">Copiar texto para LLM</button><details class="agent-guide"><summary>Ver instrucciones</summary><pre id="agent-guide-text">${esc(agentPrompt(newToken))}</pre></details></div><div class="section"><form id="token-form" class="token-form"><div class="field"><label for="token-name">Nombre de la conexión</label><input id="token-name" name="name" placeholder="Mi agente" maxlength="60" required></div><div class="field"><label for="token-scope">Permiso</label><select id="token-scope" name="scope"><option value="write">Leer y editar</option><option value="read">Solo lectura</option></select></div><button class="primary" type="submit">Crear token</button></form><p id="token-error" class="form-error" role="alert"></p><div id="new-token"></div></div><div class="section"><div class="method-tabs"><button data-method="mcp" class="${methodTab === 'mcp' ? 'active' : ''}">MCP remoto</button><button data-method="codex" class="${methodTab === 'codex' ? 'active' : ''}">Codex CLI</button><button data-method="api" class="${methodTab === 'api' ? 'active' : ''}">API HTTP</button></div><div id="instructions">${connectionInstructions()}</div></div><div class="section"><div class="section-head">Tokens activos</div><div id="tokens-list" class="token-list"><p class="tiny">Cargando…</p></div></div>`);
-    $('copy-agent-guide').addEventListener('click', () => copy(agentPrompt(newToken)));
-    document.querySelectorAll('[data-method]').forEach(button => button.addEventListener('click', () => { methodTab = button.dataset.method; document.querySelectorAll('[data-method]').forEach(b => b.classList.toggle('active', b === button)); refreshConnection(); }));
-    refreshConnection();
+    panelLayout(`<h2 id="dialog-title">Conexiones</h2>
+      <div id="new-token"></div>
+      <details id="create-connection" class="create-connection" ${newToken ? '' : 'open'}>
+        <summary>Nueva conexión</summary>
+        <form id="token-form" class="token-form">
+          <div class="field"><label for="token-name">Nombre</label><input id="token-name" name="name" value="Mi agente" maxlength="60" required></div>
+          <div class="field"><label for="token-scope">Permiso</label><select id="token-scope" name="scope"><option value="write">Leer y editar</option><option value="read">Solo lectura</option></select></div>
+          <button class="primary" type="submit">Crear conexión</button>
+        </form>
+        <p id="token-error" class="form-error" role="alert"></p>
+      </details>
+      <div class="section"><div class="section-head">Tus conexiones</div><div id="tokens-list" class="token-list"><p class="tiny">Cargando…</p></div></div>
+      <a class="agent-help" href="./llms.txt" target="_blank" rel="noopener">Guía para agentes</a>`);
+    showSecret();
     $('token-form').addEventListener('submit', async event => {
       event.preventDefault(); const button = event.target.querySelector('button'); button.disabled = true; $('token-error').textContent = '';
       try {
         const result = await request('/api/tokens', { method: 'POST', data: Object.fromEntries(new FormData(event.target)) });
-        newToken = result.token; refreshConnection(); event.target.reset(); await loadTokens();
-      } catch (e) { $('token-error').textContent = e.message; }
+        newToken = result.token; newTokenName = result.name; showSecret(); event.target.reset();
+        if ($('create-connection')) $('create-connection').open = false;
+        $('copy-token-guide')?.focus();
+        await loadTokens();
+      } catch (e) { if ($('token-error')) $('token-error').textContent = e.message; }
       finally { button.disabled = false; }
     });
     await loadTokens();
@@ -205,58 +219,44 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
   function showSecret() {
     if (!$('new-token')) return;
     if (!newToken) { $('new-token').innerHTML = ''; return; }
-    $('new-token').innerHTML = `<div class="secret-box"><p>Token listo · guárdalo antes de recargar</p><code>${esc(newToken)}</code><div class="action-row"><button class="secondary" id="copy-token">Copiar token</button><button class="secondary" id="copy-token-guide">Copiar conexión para LLM</button></div><p class="tiny">La conexión copiada incluye este token.</p></div>`;
+    $('new-token').innerHTML = `<section class="connection-ready">
+      <div class="connection-ready-heading"><span class="ready-icon">${icon('check')}</span><div><strong>${esc(newTokenName || 'Mi agente')}</strong><p>Acceso listo</p></div></div>
+      <button class="primary full" id="copy-token-guide">${icon('copy')} Copiar para mi agente</button>
+      <p class="tiny">Pega el texto en tu agente. Guarda el acceso antes de recargar.</p>
+      <details class="manual-connection"><summary>Configuración manual</summary>
+        <div class="method-tabs"><button data-method="mcp" class="${methodTab === 'mcp' ? 'active' : ''}">MCP</button><button data-method="codex" class="${methodTab === 'codex' ? 'active' : ''}">Codex</button><button data-method="api" class="${methodTab === 'api' ? 'active' : ''}">API</button></div>
+        <div id="instructions"></div>
+        <button class="text-button" id="copy-token">Copiar solo el token</button>
+        <details class="agent-guide"><summary>Texto para el agente</summary><pre>${esc(agentPrompt(newToken))}</pre></details>
+      </details>
+    </section>`;
     $('copy-token').addEventListener('click', () => copy(newToken));
     $('copy-token-guide').addEventListener('click', () => copy(agentPrompt(newToken)));
+    document.querySelectorAll('[data-method]').forEach(button => button.addEventListener('click', () => {
+      methodTab = button.dataset.method;
+      document.querySelectorAll('[data-method]').forEach(b => b.classList.toggle('active', b === button));
+      refreshConnection();
+    }));
+    refreshConnection();
   }
   async function loadTokens() {
     try {
       const result = await request('/api/tokens'); if (!$('tokens-list')) return;
-      $('tokens-list').innerHTML = result.tokens.length ? result.tokens.map(t => `<div class="token-row"><div><strong>${esc(t.name)}</strong><small>•••• ${esc(t.suffix)} · ${t.scope === 'write' ? 'Lectura y edición' : 'Solo lectura'}</small></div><button class="text-button danger" data-revoke="${esc(t.id)}">Revocar</button></div>`).join('') : '<div class="empty">Sin tokens activos</div>';
+      $('tokens-list').innerHTML = result.tokens.length ? result.tokens.map(t => `<div class="token-row"><div><strong>${esc(t.name)}</strong><small>•••• ${esc(t.suffix)} · ${t.scope === 'write' ? 'Lectura y edición' : 'Solo lectura'}</small></div><button class="text-button danger" data-revoke="${esc(t.id)}" data-suffix="${esc(t.suffix)}">Revocar</button></div>`).join('') : '<div class="empty">Aún no tienes conexiones</div>';
       document.querySelectorAll('[data-revoke]').forEach(button => button.addEventListener('click', async () => {
-        if (!confirm('¿Revocar este token? El agente perderá el acceso.')) return;
+        if (!confirm('¿Revocar esta conexión? El agente perderá el acceso.')) return;
         button.disabled = true;
-        try { await request(`/api/tokens/${button.dataset.revoke}/revoke`, { method: 'POST', data: {} }); newToken = ''; refreshConnection(); await loadTokens(); toast('Token revocado'); }
+        try { await request(`/api/tokens/${button.dataset.revoke}/revoke`, { method: 'POST', data: {} }); if (newToken && button.dataset.suffix === newToken.slice(-6)) { newToken = ''; newTokenName = ''; showSecret(); if ($('create-connection')) $('create-connection').open = true; } await loadTokens(); toast('Conexión revocada'); }
         catch (e) { toast(e.message); button.disabled = false; }
       }));
     } catch (e) { if ($('tokens-list')) $('tokens-list').innerHTML = `<p class="form-error">${esc(e.message)}</p>`; }
-  }
-  async function showEditor() {
-    if (!draft) {
-      try { draft = await request('/api/landing', { auth: false }); }
-      catch (e) { toast(e.message); return; }
-    }
-    panelLayout(`<h2 id="dialog-title">Editar página</h2><div class="section"><div class="field"><label for="page-title">Título de la página</label><input id="page-title" value="${esc(draft.title)}" maxlength="100" placeholder="Una nueva idea"></div><div class="editor-tabs"><button data-code="html" class="${editorTab === 'html' ? 'active' : ''}">HTML</button><button data-code="css" class="${editorTab === 'css' ? 'active' : ''}">CSS</button><button data-code="js" class="${editorTab === 'js' ? 'active' : ''}">JavaScript</button></div><label class="field-label" for="code-editor" hidden>Código de la landing</label><textarea id="code-editor" class="code-editor" aria-label="Código ${editorTab.toUpperCase()}" spellcheck="false" placeholder="${editorTab === 'html' ? '<main>Tu próxima idea empieza aquí.</main>' : editorTab === 'css' ? 'body { padding: 80px; }' : '// Haz tu página interactiva'}">${esc(draft[editorTab])}</textarea><p id="editor-error" class="form-error" role="alert"></p><div class="action-row"><button id="preview-button" class="secondary">Vista previa</button><span class="spacer"></span><button id="publish-button" class="primary">Publicar cambios</button></div><iframe id="preview-frame" class="preview" sandbox="allow-scripts" title="Vista previa privada" hidden></iframe><div class="action-row"><button id="reload-editor" class="text-button">Cargar página actual</button><button id="export-button" class="text-button">Exportar HTML</button><span class="spacer"></span><button id="clear-button" class="text-button danger">Dejar en blanco</button></div></div>`);
-    $('code-editor').addEventListener('input', () => { draft[editorTab] = $('code-editor').value; editorDirty = true; });
-    $('page-title').addEventListener('input', () => { draft.title = $('page-title').value; editorDirty = true; });
-    document.querySelectorAll('[data-code]').forEach(button => button.addEventListener('click', () => { editorTab = button.dataset.code; document.querySelectorAll('[data-code]').forEach(b => b.classList.toggle('active', b === button)); $('code-editor').value = draft[editorTab]; $('code-editor').setAttribute('aria-label', `Código ${editorTab.toUpperCase()}`); }));
-    $('preview-button').addEventListener('click', () => { $('preview-frame').hidden = false; $('preview-frame').srcdoc = frameDocument(draft); });
-    $('publish-button').addEventListener('click', publish);
-    $('reload-editor').addEventListener('click', async () => { if (editorDirty && !confirm('¿Descartar tus cambios y cargar la página actual?')) return; draft = null; editorDirty = false; await showEditor(); });
-    $('export-button').addEventListener('click', () => {
-      const url = URL.createObjectURL(new Blob([frameDocument(draft)], { type: 'text/html;charset=utf-8' })); const a = document.createElement('a'); a.href = url; a.download = 'landing.html'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-    });
-    $('clear-button').addEventListener('click', async () => {
-      if (!confirm('La landing quedará en blanco para todos. ¿Continuar?')) return;
-      try { const next = await request('/api/landing/clear', { method: 'POST', data: { expectedRevision: draft.revision } }); editorDirty = false; draft = null; renderLanding(next); $('account-dialog').close(); toast('Landing en blanco'); }
-      catch (e) { $('editor-error').textContent = e.message; }
-    });
-  }
-  async function publish() {
-    if (!$('publish-button') || $('publish-button').disabled) return;
-    $('publish-button').disabled = true; $('editor-error').textContent = '';
-    try {
-      const next = await request('/api/landing', { method: 'PUT', data: { title: draft.title, html: draft.html, css: draft.css, js: draft.js, expectedRevision: draft.revision } });
-      renderLanding(next); editorDirty = false; draft = null; $('account-dialog').close(); toast('Página actualizada para todos');
-    } catch (e) { $('editor-error').textContent = e.message; }
-    finally { if ($('publish-button')) $('publish-button').disabled = false; }
   }
   function showProfile() {
     panelLayout(`<h2 id="dialog-title">Mi cuenta</h2><div class="section"><div class="account-detail"><span>Usuario</span><strong>@${esc(user.username)}</strong></div><div class="account-detail"><span>Acceso</span><strong>Landing compartida</strong></div></div><div class="section"><button class="secondary" id="logout">Cerrar sesión</button></div>`);
     $('logout').addEventListener('click', async () => {
       try { await request('/api/auth/logout', { method: 'POST', data: {} }); }
       catch (e) { if (e.status !== 401) { toast(e.message); return; } }
-      session = ''; sessionStorage.removeItem(sessionKey); user = null; newToken = ''; draft = null; editorDirty = false; updateAccount(); authTab = 'login'; showAuth();
+      session = ''; sessionStorage.removeItem(sessionKey); user = null; newToken = ''; newTokenName = ''; updateAccount(); authTab = 'login'; showAuth();
     });
   }
   $('account-trigger').addEventListener('click', async () => {
@@ -267,11 +267,8 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
     }
     await showPanel();
   });
-  function mayClose(event) { if (editorDirty && !confirm('¿Cerrar sin publicar tus cambios?')) { event?.preventDefault(); return; } editorDirty = false; draft = null; $('account-dialog').close(); }
-  $('close-dialog').addEventListener('click', mayClose);
-  $('account-dialog').addEventListener('cancel', mayClose);
+  $('close-dialog').addEventListener('click', () => $('account-dialog').close());
   $('account-dialog').addEventListener('close', () => { $('dialog-content').innerHTML = ''; });
-  document.addEventListener('keydown', event => { if ((event.metaKey || event.ctrlKey) && event.key === 's' && $('account-dialog').open && panelTab === 'editor' && user) { event.preventDefault(); publish(); } });
   document.addEventListener('visibilitychange', () => { if (!document.hidden) poll(); });
   $('theme-toggle').addEventListener('click', () => applyTheme(theme === 'dark' ? 'light' : 'dark'));
   $('landing-frame').addEventListener('load', () => applyTheme(theme));

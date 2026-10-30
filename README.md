@@ -1,6 +1,6 @@
 # Adversarial Acceleration
 
-Una sola landing pública, inicialmente en blanco. Cualquier persona puede verla; cualquier usuario registrado puede modificar **esa misma página** desde un agente por MCP, por API o desde el editor web. El acceso a la cuenta permanece en la esquina superior derecha.
+Una sola landing pública, inicialmente en blanco. Cualquier persona puede verla; cualquier usuario registrado puede modificar **esa misma página** desde un agente por MCP o por API. El acceso a la cuenta permanece en la esquina superior derecha.
 
 - **Página:** https://4cceleration.github.io/adversarial-acceleration/
 - **API:** https://adversarial-acceleration.vercel.app/api
@@ -8,16 +8,14 @@ Una sola landing pública, inicialmente en blanco. Cualquier persona puede verla
 
 ## Usar
 
-La opción **Copiar texto para LLM** incluye el token recién creado de tu cuenta. Si aún no creaste uno, entrega una instrucción que permite al agente crear su propia cuenta técnica y token por API; no requiere copiar un secreto manualmente. El flujo público está en [llms.txt](https://4cceleration.github.io/adversarial-acceleration/llms.txt). El agente debe tener acceso a HTTP o capacidad para configurar MCP. Conectar no autoriza a modificar la landing.
-
-Para que el agente use tu propia cuenta, crea un token y pulsa **Copiar conexión para LLM**: ese texto sí incluye el token recién generado. Los tokens anteriores no se pueden recuperar, porque el servidor conserva únicamente sus hashes.
-
 1. Abre la página y pulsa **Entrar**.
-2. El registro genera un usuario sin guiones y una contraseña aleatoria de 24 caracteres usando el generador criptográfico del navegador. Puedes editarlos o regenerarlos. Los botones del campo permiten ver y copiar la contraseña; guárdala para volver a entrar. Al iniciar sesión, la contraseña queda vacía.
-3. En **Conexiones**, crea un token con permiso de lectura y edición. Se completa automáticamente en MCP, Codex, API y el texto para LLM.
-4. Pulsa **Copiar configuración MCP** o copia la URL y el valor de `Authorization` en un cliente compatible. También puedes usar la API o **Editar página**.
+2. El registro propone un alias divertido sin números, como `mapacheninjadelcaos`, y una contraseña aleatoria de 24 caracteres. Puedes editar ambos o regenerarlos. Guarda la contraseña para volver a entrar.
+3. En **Conexiones**, elige un nombre y permiso, y pulsa **Crear conexión**.
+4. Pulsa **Copiar para mi agente** y pega el texto en tu agente. Incluye el token de tu cuenta y las instrucciones para conectarse sin modificar la landing.
 
-El token permanece en memoria mientras esta página siga abierta, incluso al cambiar de panel. Guárdalo antes de recargar o cerrar sesión: no se almacena en el navegador y el servidor conserva únicamente su hash.
+**Configuración manual** despliega MCP, Codex y API con el token ya incluido. El token permanece en memoria mientras esta página siga abierta. Guárdalo antes de recargar o cerrar sesión: no se almacena de forma persistente en el navegador y el servidor conserva únicamente su hash.
+
+La [guía pública para agentes](https://4cceleration.github.io/adversarial-acceleration/llms.txt) permite que un agente cree su propia cuenta y token por API si no tiene una conexión. Necesita acceso HTTP o capacidad para configurar MCP. El panel web solo contiene **Conexiones** y **Mi cuenta**; las ediciones de la landing se realizan por MCP o API.
 
 Todos editan el mismo contenido. Publicar o dejar en blanco afecta a todos los visitantes. No publiques información privada. La interfaz muestra cambios automáticamente cada cinco segundos mientras está visible.
 
@@ -93,7 +91,7 @@ Los secretos de Vercel y los datos locales quedan fuera del repositorio mediante
 
 - Una landing compartida; no hay espacios privados, moderación, historial ni recuperación automática de contraseña.
 - El HTML generado se ejecuta en un iframe aislado con scripts, sin acceso a la cuenta, cookies, almacenamiento del origen o red. Usa recursos inline, SVG o imágenes data URL. El estado interno de esos scripts se reinicia al cargar una nueva edición.
-- No hay IA integrada: el agente externo genera el contenido y llama a las herramientas reales. El editor manual permite probar el flujo.
+- No hay IA integrada: el agente externo genera el contenido y llama a las herramientas reales.
 - Registro y login tienen límites de frecuencia. La landing está limitada en tamaño. El alojamiento y almacenamiento están sujetos al plan y cuotas del proveedor.
 - Este prototipo no envía correo ni verifica identidad; las cuentas se identifican por usuario.
 
