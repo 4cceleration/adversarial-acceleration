@@ -34,8 +34,8 @@
   async function poll() {
     if (pollBusy || document.hidden) return;
     pollBusy = true;
-    try { renderLanding(await request('/api/landing', { auth: false })); $('connection-dot').className = 'connection-dot online'; $('connection-dot').title = 'Página conectada · cambios automáticos'; $('connection-dot').setAttribute('aria-label', 'Conectado'); }
-    catch { $('connection-dot').className = 'connection-dot offline'; $('connection-dot').title = 'Sin conexión · intentando reconectar'; $('connection-dot').setAttribute('aria-label', 'Sin conexión'); }
+    try { renderLanding(await request('/api/landing', { auth: false })); $('account-trigger').title = 'Abrir tu cuenta'; }
+    catch { $('account-trigger').title = 'Sin conexión · intentando reconectar'; }
     finally { pollBusy = false; }
   }
   function updateAccount() {
