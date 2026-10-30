@@ -13,7 +13,7 @@ La opción **Copiar texto para LLM** incluye el token recién creado de tu cuent
 Para que el agente use tu propia cuenta, crea un token y pulsa **Copiar conexión para LLM**: ese texto sí incluye el token recién generado. Los tokens anteriores no se pueden recuperar, porque el servidor conserva únicamente sus hashes.
 
 1. Abre la página y pulsa **Entrar**.
-2. El registro sugiere un usuario aleatorio sin guiones, que puedes cambiar o regenerar. Elige una contraseña de al menos 10 caracteres; el botón del ojo permite mostrarla u ocultarla.
+2. El registro genera un usuario sin guiones y una contraseña aleatoria de 24 caracteres usando el generador criptográfico del navegador. Puedes editarlos o regenerarlos. Los botones del campo permiten ver y copiar la contraseña; guárdala para volver a entrar. Al iniciar sesión, la contraseña queda vacía.
 3. En **Conexiones**, crea un token con permiso de lectura y edición. Se completa automáticamente en MCP, Codex, API y el texto para LLM.
 4. Pulsa **Copiar configuración MCP** o copia la URL y el valor de `Authorization` en un cliente compatible. También puedes usar la API o **Editar página**.
 

@@ -8,13 +8,14 @@
   let session = sessionStorage.getItem(sessionKey) || '';
   let user = null, landing = { title: '', html: '', css: '', js: '', revision: -1 }, timer, toastTimer, pollBusy = false;
   let panelTab = 'connections', authTab = 'register', methodTab = 'mcp', editorTab = 'html', draft = null, editorDirty = false, newToken = '';
-  let registrationUsername = '';
+  let registrationUsername = '', registrationPassword = '';
   function icon(name) {
     const paths = {
       user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',
       connections: '<path d="M9 3v4m6-4v4M7 7h10v4a5 5 0 0 1-10 0V7Zm5 9v5"/>',
       editor: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M7 6.5h.01m3 0h.01M7 13h10m-10 3h6"/>',
-      random: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/>'
+      random: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/>',
+      copy: '<rect x="8" y="8" width="12" height="12" rx="3"/><path d="M15 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>'
     };
     return `<svg class="ui-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
   }
@@ -79,15 +80,23 @@
   function generateUsername() {
     return 'user' + Array.from(crypto.getRandomValues(new Uint8Array(5)), byte => byte.toString(16).padStart(2, '0')).join('');
   }
+  function generatePassword() {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@';
+    return Array.from(crypto.getRandomValues(new Uint8Array(24)), byte => alphabet[byte & 63]).join('');
+  }
   function showAuth() {
     if (authTab === 'register' && !registrationUsername) registrationUsername = generateUsername();
+    if (authTab === 'register' && !registrationPassword) registrationPassword = generatePassword();
     let suggestedUsername = registrationUsername;
     if (authTab === 'login') { try { suggestedUsername = localStorage.getItem('aa-last-user') || ''; } catch { suggestedUsername = ''; } }
     $('account-dialog').classList.remove('wide');
-    $('dialog-content').innerHTML = `<div class="auth-shell"><h1 id="dialog-title">Tu cuenta</h1><div class="auth-tabs" role="tablist"><button role="tab" data-auth="register" class="${authTab === 'register' ? 'active' : ''}" aria-selected="${authTab === 'register'}">Crear cuenta</button><button role="tab" data-auth="login" class="${authTab === 'login' ? 'active' : ''}" aria-selected="${authTab === 'login'}">Iniciar sesión</button></div><form id="auth-form"><div class="field"><label for="auth-username">Usuario</label><div class="input-with-action"><input id="auth-username" name="username" value="${esc(suggestedUsername)}" placeholder="Tu usuario" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_\\-]{3,32}" autocomplete="username" autocapitalize="none" spellcheck="false" required>${authTab === 'register' ? `<button id="regenerate-username" class="input-action" type="button" aria-label="Generar otro usuario" title="Generar otro usuario">${icon('random')}</button>` : ''}</div></div><div class="field"><label for="auth-password">Contraseña</label><div class="input-with-action"><input id="auth-password" name="password" type="password" placeholder="Mínimo 10 caracteres" minlength="10" maxlength="200" autocomplete="${authTab === 'register' ? 'new-password' : 'current-password'}" required><button id="toggle-password" class="input-action" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div><p id="auth-error" class="form-error" role="alert"></p><button class="primary full" type="submit">${authTab === 'register' ? 'Crear mi cuenta' : 'Entrar'}</button></form></div>`;
+    $('dialog-content').innerHTML = `<div class="auth-shell"><h1 id="dialog-title">Tu cuenta</h1><div class="auth-tabs" role="tablist"><button role="tab" data-auth="register" class="${authTab === 'register' ? 'active' : ''}" aria-selected="${authTab === 'register'}">Crear cuenta</button><button role="tab" data-auth="login" class="${authTab === 'login' ? 'active' : ''}" aria-selected="${authTab === 'login'}">Iniciar sesión</button></div><form id="auth-form"><div class="field"><label for="auth-username">Usuario</label><div class="input-with-action"><input id="auth-username" name="username" value="${esc(suggestedUsername)}" placeholder="Tu usuario" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_\\-]{3,32}" autocomplete="username" autocapitalize="none" spellcheck="false" required>${authTab === 'register' ? `<button id="regenerate-username" class="input-action" type="button" aria-label="Generar otro usuario" title="Generar otro usuario">${icon('random')}</button>` : ''}</div></div><div class="field"><label for="auth-password">Contraseña</label><div class="input-with-action ${authTab === 'register' ? 'password-generated' : ''}"><input id="auth-password" name="password" type="password" value="${authTab === 'register' ? esc(registrationPassword) : ''}" autocapitalize="none" spellcheck="false" placeholder="Mínimo 10 caracteres" minlength="10" maxlength="200" autocomplete="${authTab === 'register' ? 'new-password' : 'current-password'}" required><div class="input-actions"><button id="toggle-password" class="input-action" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button>${authTab === 'register' ? `<button id="copy-password" class="input-action" type="button" aria-label="Copiar contraseña" title="Copiar contraseña">${icon('copy')}</button><button id="regenerate-password" class="input-action" type="button" aria-label="Generar otra contraseña" title="Generar otra contraseña">${icon('random')}</button>` : ''}</div></div>${authTab === 'register' ? '<small class="password-hint">Guárdala para volver a entrar.</small>' : ''}</div><p id="auth-error" class="form-error" role="alert"></p><button class="primary full" type="submit">${authTab === 'register' ? 'Crear mi cuenta' : 'Entrar'}</button></form></div>`;
     document.querySelectorAll('[data-auth]').forEach(button => button.addEventListener('click', () => { authTab = button.dataset.auth; showAuth(); }));
     $('auth-username').addEventListener('input', () => { if (authTab === 'register') registrationUsername = $('auth-username').value; });
     $('regenerate-username')?.addEventListener('click', () => { registrationUsername = generateUsername(); $('auth-username').value = registrationUsername; });
+    $('auth-password').addEventListener('input', () => { if (authTab === 'register') registrationPassword = $('auth-password').value; });
+    $('regenerate-password')?.addEventListener('click', () => { registrationPassword = generatePassword(); $('auth-password').value = registrationPassword; });
+    $('copy-password')?.addEventListener('click', () => copy($('auth-password').value));
     $('toggle-password').addEventListener('click', () => {
       const input = $('auth-password'), button = $('toggle-password');
       const visible = input.type === 'password';
@@ -101,7 +110,7 @@
       try {
         const input = Object.fromEntries(new FormData(event.target));
         const result = await request(`/api/auth/${authTab}`, { method: 'POST', data: input, auth: false });
-        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; newToken = ''; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; updateAccount(); panelTab = 'connections'; await showPanel();
+        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; newToken = ''; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; registrationPassword = ''; updateAccount(); panelTab = 'connections'; await showPanel();
       } catch (e) { if ($('auth-error')) $('auth-error').textContent = e.message; }
       finally { button.disabled = false; }
     });

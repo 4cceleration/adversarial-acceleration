@@ -42,6 +42,10 @@
 .input-action{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:35px;height:35px;border:0;border-radius:7px;background:transparent;color:var(--muted);display:grid;place-items:center}
 .input-action:hover{background:var(--soft);color:var(--ink)}
 .input-action:active{transform:translateY(-50%)}
+.input-actions{position:absolute;right:5px;top:50%;transform:translateY(-50%);display:flex;gap:4px}
+.input-actions .input-action{position:static;transform:none;width:32px;height:33px}
+.auth-shell .password-generated input{padding-right:118px}
+.password-hint{font-size:10px;line-height:1.6;color:var(--muted)}
 
 /* Ultramarine + white brand. */
 :root{--brand:#243bff;--brand-hover:#162bd8}
