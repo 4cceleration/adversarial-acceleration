@@ -11,7 +11,6 @@ const handle = `smoke_${Date.now().toString(36)}`;
 try {
   await page.goto(base);
   await page.getByRole('button', { name: 'Abrir tu cuenta' }).click();
-  await page.getByLabel('Tu nombre', { exact: true }).fill('Prueba de interfaz');
   await page.getByLabel('Usuario', { exact: true }).fill(handle);
   await page.getByLabel('Contraseña', { exact: true }).fill(`test-password-${Date.now()}!`);
   await page.getByRole('button', { name: 'Crear mi cuenta' }).click();
