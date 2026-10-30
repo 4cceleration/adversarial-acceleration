@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Una página pública que puedes transformar desde tu agente de IA. Conecta tu MCP y construye sobre un lienzo en blanco.">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' https://adversarial-acceleration.vercel.app; frame-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <title>Adversarial Acceleration</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <main id="canvas" aria-label="Landing pública compartida">
+    <iframe id="landing-frame" title="Página pública" sandbox="allow-scripts" referrerpolicy="no-referrer"></iframe>
+  </main>
+  <div class="account-dock">
+    <span id="connection-dot" class="connection-dot" role="status" aria-label="Conectando" title="Conectando"></span>
+    <button id="account-trigger" class="account-trigger" aria-label="Abrir tu cuenta" aria-haspopup="dialog">
+      <span id="avatar" class="avatar"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg></span>
+      <span id="account-label">Entrar</span>
+    </button>
+  </div>
+  <dialog id="account-dialog" aria-labelledby="dialog-title">
+    <button id="close-dialog" class="icon-button close-dialog" aria-label="Cerrar">×</button>
+    <div id="dialog-content"></div>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript>Activa JavaScript para ver la página y conectar tu agente.</noscript>
+</body>
+</html>
