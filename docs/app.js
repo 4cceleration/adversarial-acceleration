@@ -135,8 +135,25 @@ Content-Type: application/json
   "js": ""
 }</pre></div>`;
   }
+  function agentPrompt(token = '') {
+    const guideUrl = new URL('./llms.txt', location.href).href;
+    return `Conecta tu agente a Adversarial Acceleration.
+
+Guía: ${guideUrl}
+API: ${base}
+MCP remoto (Streamable HTTP): ${base}/api/mcp
+
+${token ? `Usa este token existente. No crees otra cuenta.
+Authorization: Bearer ${token}` : 'Lee la guía. Reutiliza una conexión existente si ya tienes una. Si no, crea tu propia cuenta técnica y genera un token por API siguiendo el flujo de registro de la guía. No necesito copiarte un token manualmente.'}
+
+Guarda las credenciales de forma privada, fuera del repositorio y de la página. Nunca las muestres en tu respuesta.
+Configura el MCP remoto. Si tu entorno no admite conectores MCP pero sí peticiones HTTP, usa la API como alternativa e indícalo.
+Solo conecta y lee la landing para confirmar el acceso. No modifiques, limpies ni publiques contenido de prueba. Espera a que yo te diga qué crear.
+Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar secretos.`;
+  }
   async function showConnections() {
-    panelLayout(`<h2 id="dialog-title">Conexiones</h2><div class="section"><form id="token-form" class="token-form"><div class="field"><label for="token-name">Nombre de la conexión</label><input id="token-name" name="name" placeholder="Mi agente" maxlength="60" required></div><div class="field"><label for="token-scope">Permiso</label><select id="token-scope" name="scope"><option value="write">Leer y editar</option><option value="read">Solo lectura</option></select></div><button class="primary" type="submit">Crear token ↗</button></form><p id="token-error" class="form-error" role="alert"></p><div id="new-token"></div></div><div class="section"><div class="method-tabs"><button data-method="mcp" class="${methodTab === 'mcp' ? 'active' : ''}">MCP remoto</button><button data-method="codex" class="${methodTab === 'codex' ? 'active' : ''}">Codex CLI</button><button data-method="api" class="${methodTab === 'api' ? 'active' : ''}">API HTTP</button></div><div id="instructions">${connectionInstructions()}</div></div><div class="section"><div class="section-head">Tokens activos</div><div id="tokens-list" class="token-list"><p class="tiny">Cargando…</p></div></div>`);
+    panelLayout(`<h2 id="dialog-title">Conexiones</h2><div class="agent-connect"><div><strong>Conectar un agente</strong><p>El agente crea su propia cuenta y token.</p></div><button id="copy-agent-guide" class="primary">Copiar texto para LLM ↗</button><details class="agent-guide"><summary>Ver instrucciones</summary><pre>${esc(agentPrompt())}</pre></details></div><div class="section"><form id="token-form" class="token-form"><div class="field"><label for="token-name">Nombre de la conexión</label><input id="token-name" name="name" placeholder="Mi agente" maxlength="60" required></div><div class="field"><label for="token-scope">Permiso</label><select id="token-scope" name="scope"><option value="write">Leer y editar</option><option value="read">Solo lectura</option></select></div><button class="primary" type="submit">Crear token ↗</button></form><p id="token-error" class="form-error" role="alert"></p><div id="new-token"></div></div><div class="section"><div class="method-tabs"><button data-method="mcp" class="${methodTab === 'mcp' ? 'active' : ''}">MCP remoto</button><button data-method="codex" class="${methodTab === 'codex' ? 'active' : ''}">Codex CLI</button><button data-method="api" class="${methodTab === 'api' ? 'active' : ''}">API HTTP</button></div><div id="instructions">${connectionInstructions()}</div></div><div class="section"><div class="section-head">Tokens activos</div><div id="tokens-list" class="token-list"><p class="tiny">Cargando…</p></div></div>`);
+    $('copy-agent-guide').addEventListener('click', () => copy(agentPrompt()));
     document.querySelectorAll('[data-method]').forEach(button => button.addEventListener('click', () => { methodTab = button.dataset.method; document.querySelectorAll('[data-method]').forEach(b => b.classList.toggle('active', b === button)); $('instructions').innerHTML = connectionInstructions(); bindCopyMcp(); }));
     bindCopyMcp();
     $('token-form').addEventListener('submit', async event => {
@@ -152,8 +169,9 @@ Content-Type: application/json
   function bindCopyMcp() { $('copy-mcp')?.addEventListener('click', () => copy(`${base}/api/mcp`)); }
   function showSecret() {
     if (!newToken || !$('new-token')) return;
-    $('new-token').innerHTML = `<div class="secret-box"><p>Token creado · solo se muestra una vez</p><code>${esc(newToken)}</code><button class="secondary" id="copy-token">Copiar token</button></div>`;
+    $('new-token').innerHTML = `<div class="secret-box"><p>Token creado · solo se muestra una vez</p><code>${esc(newToken)}</code><div class="action-row"><button class="secondary" id="copy-token">Copiar token</button><button class="secondary" id="copy-token-guide">Copiar conexión para LLM</button></div><p class="tiny">La conexión copiada incluye este token.</p></div>`;
     $('copy-token').addEventListener('click', () => copy(newToken));
+    $('copy-token-guide').addEventListener('click', () => copy(agentPrompt(newToken)));
   }
   async function loadTokens() {
     try {

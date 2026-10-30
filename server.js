@@ -2,8 +2,8 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { handleApi } from './lib/api.js';
 const port = Number(process.env.PORT || 4317);
-const files = { '/': 'index.html', '/index.html': 'index.html', '/styles.css': 'styles.css', '/app.js': 'app.js', '/config.js': 'config.js', '/favicon.svg': 'favicon.svg' };
-const mime = { html: 'text/html', css: 'text/css', js: 'text/javascript', svg: 'image/svg+xml' };
+const files = { '/': 'index.html', '/index.html': 'index.html', '/styles.css': 'styles.css', '/app.js': 'app.js', '/config.js': 'config.js', '/favicon.svg': 'favicon.svg', '/llms.txt': 'llms.txt' };
+const mime = { html: 'text/html', css: 'text/css', js: 'text/javascript', svg: 'image/svg+xml', txt: 'text/plain' };
 const server = http.createServer(async (req, res) => {
   if (![`127.0.0.1:${port}`, `localhost:${port}`].includes(req.headers.host)) { res.writeHead(403); res.end(); return; }
   if (req.url.startsWith('/api/')) return handleApi(req, res);

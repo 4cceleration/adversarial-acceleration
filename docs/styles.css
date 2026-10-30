@@ -73,3 +73,13 @@
 :root[data-theme="dark"] .empty{background:#0f1a38}
 :root[data-theme="dark"] .toast{background:#405aff;color:white}
 @media(max-width:700px){.panel-shell{display:block}.panel-sidebar{padding-top:20px}.user-card{padding-bottom:15px}.panel-main{padding-top:24px}}
+
+.agent-connect{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px;padding:18px;border:1px solid #dae1ff;border-radius:11px;background:#f7f9ff;margin-top:22px}
+.agent-connect strong{font-size:12px;font-weight:600}
+.agent-connect p{font-size:10px;color:var(--muted);margin-top:5px;line-height:1.6}
+.agent-connect .primary{font-size:11px;min-height:36px;padding:8px 12px}
+.agent-guide{width:100%;font-size:10px;color:var(--muted)}
+.agent-guide summary{cursor:pointer;list-style-position:inside}
+.agent-guide pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#fff;border:1px solid var(--line);border-radius:8px;padding:14px;font-size:10px;line-height:1.7;margin:12px 0 0;color:var(--ink)}
+:root[data-theme="dark"] .agent-connect{background:#13214a;border-color:#30457c}
+:root[data-theme="dark"] .agent-guide pre{background:#0b152f}

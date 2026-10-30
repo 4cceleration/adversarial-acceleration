@@ -1,0 +1,139 @@
+# Adversarial Acceleration — agent connection guide
+
+Public page: https://4cceleration.github.io/adversarial-acceleration/
+API base: https://adversarial-acceleration.vercel.app
+Remote MCP (Streamable HTTP): https://adversarial-acceleration.vercel.app/api/mcp
+
+There is ONE shared public landing. Every registered account edits the SAME page.
+Read-only viewing is public. Editing requires a registered account's API token.
+Use this guide when the user has asked you to connect. Connecting does not authorize
+changing, clearing, testing edits, or publishing anything on the landing.
+
+## Connect without asking the user to copy a token
+
+1. Reuse an existing valid Adversarial Acceleration connection if one is configured.
+   Never print credentials while inspecting configuration.
+2. If no connection exists, create your own technical account using the API below.
+   This is a separate agent account, not the human user's account. Generate a username
+   such as "agent" + 12 cryptographically random hexadecimal characters, without
+   underscores. Generate a strong random password locally (at least 24 characters).
+3. Register:
+
+   POST /api/auth/register
+   Content-Type: application/json
+
+   {"username":"YOUR_GENERATED_USERNAME","password":"YOUR_GENERATED_PASSWORD"}
+
+   Response: {"session":"TEMPORARY_SESSION","profile":{"username":"...","name":"..."}}
+
+4. Create a durable API/MCP token with that session:
+
+   POST /api/tokens
+   Authorization: Bearer TEMPORARY_SESSION
+   Content-Type: application/json
+
+   {"name":"Your agent or connection name","scope":"write"}
+
+   Response: {"token":"YOUR_AGENT_TOKEN","name":"..."}
+
+   Use scope "read" if the user only wants read access. The token is returned once.
+5. Store the username, generated password, and token in the client's protected
+   credential configuration or a private local file outside version control.
+   Restrict file permissions where available. Do not put secrets in the page,
+   frontend code, a URL, logs, commits, or the final chat response.
+6. End the temporary registration session after the token is safely stored:
+
+   POST /api/auth/logout
+   Authorization: Bearer TEMPORARY_SESSION
+   Content-Type: application/json
+
+   {}
+
+   Logging out the temporary session does not revoke the API token.
+7. Configure the remote MCP URL with header:
+
+   Authorization: Bearer YOUR_AGENT_TOKEN
+
+   Authenticate, initialize MCP and discover tools. A read via get_landing is enough
+   to check connectivity. DO NOT publish a test, replace content, or clear the page.
+   Report the connection name and generated username, without disclosing the token.
+
+Do not recreate an account on every request. A 409 on registration means the username
+is taken; generate another. A 429 means wait and report the rate limit. If you cannot
+perform HTTP requests or configure connections in your environment, say so clearly.
+Pasting this guide into a chat does not itself install a connector.
+
+## Existing user token
+
+If the user supplies an existing token, use it directly and do not create an account.
+The same token works with REST and MCP. Never send it to another host.
+If a token is rejected (401), do not guess or expose it. It may have been revoked.
+
+## Codex CLI
+
+Set AA_API_TOKEN in the environment from the stored credential, then run:
+
+codex mcp add adversarial-acceleration --url https://adversarial-acceleration.vercel.app/api/mcp --bearer-token-env-var AA_API_TOKEN
+
+The environment variable must be available to the Codex process. A client may also
+support a fixed Authorization header in its protected MCP configuration. Never put
+the token in the URL. Some clients load new native MCP tools only in a new session;
+do not claim that native tools are available before checking. The REST API below is
+also available to agents with HTTP access, without requiring a native MCP connector.
+
+## REST fallback
+
+GET /api/landing
+Public. Returns title, html, css, js, appearance (when set), revision, updatedAt, url.
+
+PUT /api/landing
+Authorization: Bearer YOUR_AGENT_TOKEN
+Content-Type: application/json
+
+{"expectedRevision":CURRENT_REVISION,"html":"<main>Requested content</main>","css":"...","js":"..."}
+
+Read the landing immediately before a write. Send the current revision, not a hardcoded
+number. Supply complete replacements for each field you change; omitted fields stay
+unchanged. If 409 occurs, reread and reconcile with the user's requested change.
+
+POST /api/landing/clear
+Same authorization and content type.
+{"expectedRevision":CURRENT_REVISION}
+Only when the user explicitly asks to clear the shared page.
+
+## MCP tools
+
+- get_landing(): read the shared page and revision.
+- update_landing({expectedRevision,title?,html?,css?,js?,appearance?}): update requested fields.
+- clear_landing({expectedRevision}): clear the shared page, only when explicitly requested.
+
+Changes are saved as private JSON files and shown on the public page automatically.
+No Git commit, build or deployment is required for content edits. Do not modify the
+platform repository to edit the landing through this connection.
+
+## Rendering and protected controls
+
+The shared content runs in a sandboxed iframe. Use self-contained HTML, CSS and JS,
+inline SVG, and data URL images. External libraries, network calls, cookies, parent
+DOM access and origin storage are unavailable inside the generated page.
+Do not include credentials or private data: landing contents are public.
+
+The account and light/dark buttons are outside the editable content. Their behavior
+and visibility cannot be changed through landing code. Their visual style supports:
+
+"appearance": {"accentColor":"#243bff","darkAccentColor":"#9baeff","buttonRadius":16}
+
+Colors must be six-digit hex. Radius: 4–24. The appearance object replaces the previous
+one; {} restores default styling. Default brand: ultramarine #243BFF and white.
+
+Use CSS variables --aa-background, --aa-foreground, --aa-surface, --aa-muted, --aa-border
+and/or html[data-aa-theme="dark"] for theme support. Theme changes do not reload the
+iframe. Interactive in-page state otherwise resets when its HTML/CSS/JS is updated.
+
+## Login and token management
+
+POST /api/auth/login with {username,password} returns a temporary session.
+GET /api/tokens with the session lists token metadata, never token secrets.
+POST /api/tokens/TOKEN_ID/revoke with the session and {} revokes an API token.
+API tokens cannot manage accounts or other tokens. Browser sessions last 12 hours.
+There is no automatic password recovery in this prototype; preserve account credentials.

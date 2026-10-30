@@ -8,6 +8,10 @@ Una sola landing pública, inicialmente en blanco. Cualquier persona puede verla
 
 ## Usar
 
+La opción **Copiar texto para LLM** entrega una instrucción que permite al agente crear su propia cuenta técnica y token por API; no requiere copiar un secreto manualmente. El flujo público está en [llms.txt](https://4cceleration.github.io/adversarial-acceleration/llms.txt). El agente debe tener acceso a HTTP o capacidad para configurar MCP. Conectar no autoriza a modificar la landing.
+
+Para que el agente use tu propia cuenta, crea un token y pulsa **Copiar conexión para LLM**: ese texto sí incluye el token recién generado. Los tokens anteriores no se pueden recuperar, porque el servidor conserva únicamente sus hashes.
+
 1. Abre la página y pulsa **Entrar**.
 2. El registro sugiere un usuario aleatorio sin guiones, que puedes cambiar o regenerar. Elige una contraseña de al menos 10 caracteres; el botón del ojo permite mostrarla u ocultarla.
 3. En **Conexiones**, crea un token con permiso de lectura y edición. Se muestra una sola vez.
