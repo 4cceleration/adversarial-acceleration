@@ -9,7 +9,7 @@ Una sola landing pública, inicialmente en blanco. Cualquier persona puede verla
 ## Usar
 
 1. Abre la página y pulsa **Entrar**.
-2. Crea tu cuenta con usuario y contraseña de al menos 10 caracteres.
+2. El registro sugiere un usuario aleatorio sin guiones, que puedes cambiar o regenerar. Elige una contraseña de al menos 10 caracteres; el botón del ojo permite mostrarla u ocultarla.
 3. En **Conexiones**, crea un token con permiso de lectura y edición. Se muestra una sola vez.
 4. Configura la URL MCP y el encabezado `Authorization: Bearer TU_TOKEN` en un cliente compatible. También puedes usar la API o **Editar página**.
 

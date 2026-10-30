@@ -8,6 +8,7 @@
   let session = sessionStorage.getItem(sessionKey) || '';
   let user = null, landing = { title: '', html: '', css: '', js: '', revision: -1 }, timer, toastTimer, pollBusy = false;
   let panelTab = 'connections', authTab = 'register', methodTab = 'mcp', editorTab = 'html', draft = null, editorDirty = false, newToken = '';
+  let registrationUsername = '';
   const mark = '<div class="wordmark"><div class="mark">a↗</div><span>Adversarial<br>Acceleration</span></div>';
   async function request(path, { method = 'GET', data, auth = true } = {}) {
     const headers = { 'Content-Type': 'application/json' };
@@ -66,16 +67,32 @@
     $('account-label').textContent = user ? user.username : 'Entrar';
     $('avatar').textContent = user ? user.name.slice(0, 2).toUpperCase() : '↗';
   }
+  function generateUsername() {
+    return 'user' + Array.from(crypto.getRandomValues(new Uint8Array(5)), byte => byte.toString(16).padStart(2, '0')).join('');
+  }
   function showAuth() {
+    if (authTab === 'register' && !registrationUsername) registrationUsername = generateUsername();
+    let suggestedUsername = registrationUsername;
+    if (authTab === 'login') { try { suggestedUsername = localStorage.getItem('aa-last-user') || ''; } catch { suggestedUsername = ''; } }
     $('account-dialog').classList.remove('wide');
-    $('dialog-content').innerHTML = `<div class="auth-shell"><h1 id="dialog-title">Tu cuenta</h1><div class="auth-tabs" role="tablist"><button role="tab" data-auth="register" class="${authTab === 'register' ? 'active' : ''}" aria-selected="${authTab === 'register'}">Crear cuenta</button><button role="tab" data-auth="login" class="${authTab === 'login' ? 'active' : ''}" aria-selected="${authTab === 'login'}">Iniciar sesión</button></div><form id="auth-form"><div class="field"><label for="auth-username">Usuario</label><input id="auth-username" name="username" placeholder="tu_usuario" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_\\-]{3,32}" autocomplete="username" autocapitalize="none" spellcheck="false" required></div><div class="field"><label for="auth-password">Contraseña</label><input id="auth-password" name="password" type="password" placeholder="Mínimo 10 caracteres" minlength="10" maxlength="200" autocomplete="${authTab === 'register' ? 'new-password' : 'current-password'}" required></div><p id="auth-error" class="form-error" role="alert"></p><button class="primary full" type="submit">${authTab === 'register' ? 'Crear mi cuenta' : 'Entrar'} <span class="arrow">↗</span></button></form></div>`;
+    $('dialog-content').innerHTML = `<div class="auth-shell"><h1 id="dialog-title">Tu cuenta</h1><div class="auth-tabs" role="tablist"><button role="tab" data-auth="register" class="${authTab === 'register' ? 'active' : ''}" aria-selected="${authTab === 'register'}">Crear cuenta</button><button role="tab" data-auth="login" class="${authTab === 'login' ? 'active' : ''}" aria-selected="${authTab === 'login'}">Iniciar sesión</button></div><form id="auth-form"><div class="field"><label for="auth-username">Usuario</label><div class="input-with-action"><input id="auth-username" name="username" value="${esc(suggestedUsername)}" placeholder="Tu usuario" minlength="3" maxlength="32" pattern="[a-zA-Z0-9_\\-]{3,32}" autocomplete="username" autocapitalize="none" spellcheck="false" required>${authTab === 'register' ? '<button id="regenerate-username" class="input-action" type="button" aria-label="Generar otro usuario" title="Generar otro usuario"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17"/></svg></button>' : ''}</div></div><div class="field"><label for="auth-password">Contraseña</label><div class="input-with-action"><input id="auth-password" name="password" type="password" placeholder="Mínimo 10 caracteres" minlength="10" maxlength="200" autocomplete="${authTab === 'register' ? 'new-password' : 'current-password'}" required><button id="toggle-password" class="input-action" type="button" aria-label="Mostrar contraseña" title="Mostrar contraseña" aria-pressed="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div><p id="auth-error" class="form-error" role="alert"></p><button class="primary full" type="submit">${authTab === 'register' ? 'Crear mi cuenta' : 'Entrar'} <span class="arrow">↗</span></button></form></div>`;
     document.querySelectorAll('[data-auth]').forEach(button => button.addEventListener('click', () => { authTab = button.dataset.auth; showAuth(); }));
+    $('auth-username').addEventListener('input', () => { if (authTab === 'register') registrationUsername = $('auth-username').value; });
+    $('regenerate-username')?.addEventListener('click', () => { registrationUsername = generateUsername(); $('auth-username').value = registrationUsername; });
+    $('toggle-password').addEventListener('click', () => {
+      const input = $('auth-password'), button = $('toggle-password');
+      const visible = input.type === 'password';
+      input.type = visible ? 'text' : 'password';
+      const label = visible ? 'Ocultar contraseña' : 'Mostrar contraseña';
+      button.setAttribute('aria-label', label); button.title = label; button.setAttribute('aria-pressed', String(visible));
+      button.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${visible ? '<path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.2A11 11 0 0 1 12 5c6.5 0 10 7 10 7a19 19 0 0 1-3.2 4.2M6.2 6.2A19 19 0 0 0 2 12s3.5 7 10 7a11 11 0 0 0 5.8-1.7"/>' : '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>'}</svg>`;
+    });
     $('auth-form').addEventListener('submit', async event => {
       event.preventDefault(); const button = event.target.querySelector('[type=submit]'); button.disabled = true; $('auth-error').textContent = '';
       try {
         const input = Object.fromEntries(new FormData(event.target));
         const result = await request(`/api/auth/${authTab}`, { method: 'POST', data: input, auth: false });
-        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; updateAccount(); panelTab = 'connections'; await showPanel();
+        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; updateAccount(); panelTab = 'connections'; await showPanel();
       } catch (e) { if ($('auth-error')) $('auth-error').textContent = e.message; }
       finally { button.disabled = false; }
     });

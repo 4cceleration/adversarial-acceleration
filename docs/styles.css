@@ -36,3 +36,9 @@
 :root[data-theme="dark"] .code-editor{background:#131c15;color:#ccdac4}
 :root[data-theme="dark"] .form-error,:root[data-theme="dark"] .danger{color:#eea494}
 :root[data-theme="dark"] .toast{background:#dfeab8;color:#1b2b24}
+
+.input-with-action{position:relative}
+.auth-shell .input-with-action input{padding-right:46px}
+.input-action{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:35px;height:35px;border:0;border-radius:7px;background:transparent;color:var(--muted);display:grid;place-items:center}
+.input-action:hover{background:var(--soft);color:var(--ink)}
+.input-action:active{transform:translateY(-50%)}
