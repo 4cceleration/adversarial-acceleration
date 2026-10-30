@@ -34,11 +34,9 @@ try {
   const clear = await fetch(apiBase + '/api/landing/clear', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ expectedRevision: next.revision }) });
   assert.equal(clear.status, 200);
   await page.getByRole('button', { name: 'Abrir tu cuenta' }).click();
-  await page.getByRole('button', { name: 'Conexiones', exact: false }).click();
   page.on('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Revocar', exact: true }).click();
   await page.getByText('Aún no tienes conexiones', { exact: false }).waitFor();
-  await page.getByRole('button', { name: 'Mi cuenta', exact: false }).click();
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
   await page.getByRole('button', { name: 'Entrar', exact: false }).last().waitFor();
   await page.setViewportSize({ width: 390, height: 844 });

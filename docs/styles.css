@@ -153,3 +153,18 @@ dialog::backdrop{background:#13236b14;backdrop-filter:blur(9px);-webkit-backdrop
 :root[data-theme="dark"] .connection-ready{background:linear-gradient(135deg,#2c407559,#20336066)}
 :root[data-theme="dark"] .ready-icon{color:#c4d0ff}
 @media(max-width:480px){.token-form{grid-template-columns:minmax(0,1fr)}.connection-ready{padding:18px}.create-connection{padding:16px}}
+
+/* Account and connections share one compact modal. */
+dialog.wide{width:min(560px,calc(100vw - 32px))}
+.account-shell{padding:28px 32px 20px}
+.account-header{display:flex;align-items:center;gap:12px;margin-bottom:28px;padding-right:30px}
+.account-header .avatar{width:38px;height:38px;flex-shrink:0;font-size:12px}
+.account-identity{min-width:0;flex:1}
+.account-identity span{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}
+.account-identity strong{display:block;font-size:12px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.account-content{min-width:0}
+.account-content h2{font-size:23px}
+.account-footer{display:flex;align-items:center;justify-content:space-between;gap:16px;border-top:1px solid var(--line);margin-top:24px;padding-top:14px}
+.account-footer .agent-help{margin:0}
+.account-footer .text-button{font-size:11px;color:var(--muted);padding:8px 0}
+@media(max-width:480px){.account-shell{padding:26px 20px 18px}.account-header{margin-bottom:24px}}

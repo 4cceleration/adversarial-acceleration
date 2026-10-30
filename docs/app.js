@@ -7,12 +7,11 @@
   let theme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   let session = sessionStorage.getItem(sessionKey) || '';
   let user = null, landing = { title: '', html: '', css: '', js: '', revision: -1 }, timer, toastTimer, pollBusy = false;
-  let panelTab = 'connections', authTab = 'register', methodTab = 'mcp', newToken = '', newTokenName = '';
+  let authTab = 'register', methodTab = 'mcp', newToken = '', newTokenName = '';
   let registrationUsername = '', registrationPassword = '';
   function icon(name) {
     const paths = {
       user: '<circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',
-      connections: '<path d="M9 3v4m6-4v4M7 7h10v4a5 5 0 0 1-10 0V7Zm5 9v5"/>',
       check: '<path d="m5 12 4 4L19 6"/>',
       random: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8 8h.01M16 8h.01M12 12h.01M8 16h.01M16 16h.01"/>',
       copy: '<rect x="8" y="8" width="12" height="12" rx="3"/><path d="M15 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h2"/>'
@@ -116,22 +115,23 @@
       try {
         const input = Object.fromEntries(new FormData(event.target));
         const result = await request(`/api/auth/${authTab}`, { method: 'POST', data: input, auth: false });
-        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; newToken = ''; newTokenName = ''; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; registrationPassword = ''; updateAccount(); panelTab = 'connections'; await showPanel();
+        session = result.session; sessionStorage.setItem(sessionKey, session); user = result.profile; newToken = ''; newTokenName = ''; try { localStorage.setItem('aa-last-user', user.username); } catch {} registrationUsername = ''; registrationPassword = ''; updateAccount(); await showPanel();
       } catch (e) { if ($('auth-error')) $('auth-error').textContent = e.message; }
       finally { button.disabled = false; }
     });
   }
-  function panelLayout(content) {
+  function accountLayout(content) {
     $('account-dialog').classList.add('wide');
-    $('dialog-content').innerHTML = `<div class="panel-shell"><aside class="panel-sidebar"><div class="user-card"><div class="avatar">${esc(user.name.slice(0,2))}</div><div><div class="user-name">${esc(user.username)}</div></div></div><nav class="panel-nav" aria-label="Tu cuenta"><button data-panel="connections" class="${panelTab === 'connections' ? 'active' : ''}"><span class="nav-icon">${icon('connections')}</span> Conexiones</button><button data-panel="profile" class="${panelTab === 'profile' ? 'active' : ''}"><span class="nav-icon">${icon('user')}</span> Mi cuenta</button></nav></aside><section class="panel-main">${content}</section></div>`;
-    document.querySelectorAll('[data-panel]').forEach(button => button.addEventListener('click', async () => {
-      panelTab = button.dataset.panel; await showPanel();
-    }));
+    $('dialog-content').innerHTML = `<div class="account-shell">
+      <header class="account-header"><div class="avatar">${esc(user.name.slice(0,2))}</div><div class="account-identity"><span>Tu cuenta</span><strong title="${esc(user.username)}">${esc(user.username)}</strong></div></header>
+      <section class="account-content">${content}</section>
+      <footer class="account-footer"><a class="agent-help" href="./llms.txt" target="_blank" rel="noopener">Guía para agentes</a><button class="text-button" id="logout">Cerrar sesión</button></footer>
+    </div>`;
+    $('logout').addEventListener('click', logout);
   }
   async function showPanel() {
     if (!user) { showAuth(); return; }
-    if (panelTab === 'connections') await showConnections();
-    else showProfile();
+    await showConnections();
   }
   async function copy(text) {
     try { await navigator.clipboard.writeText(text); toast('Copiado'); }
@@ -189,7 +189,7 @@ Solo conecta y lee la landing para confirmar el acceso. No modifiques, limpies n
 Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar secretos.`;
   }
   async function showConnections() {
-    panelLayout(`<h2 id="dialog-title">Conexiones</h2>
+    accountLayout(`<h2 id="dialog-title">Conexiones</h2>
       <div id="new-token"></div>
       <details id="create-connection" class="create-connection" ${newToken ? '' : 'open'}>
         <summary>Nueva conexión</summary>
@@ -200,8 +200,7 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
         </form>
         <p id="token-error" class="form-error" role="alert"></p>
       </details>
-      <div class="section"><div class="section-head">Tus conexiones</div><div id="tokens-list" class="token-list"><p class="tiny">Cargando…</p></div></div>
-      <a class="agent-help" href="./llms.txt" target="_blank" rel="noopener">Guía para agentes</a>`);
+      <div class="section"><div class="section-head">Tus conexiones</div><div id="tokens-list" class="token-list"><p class="tiny">Cargando…</p></div></div>`);
     showSecret();
     $('token-form').addEventListener('submit', async event => {
       event.preventDefault(); const button = event.target.querySelector('button'); button.disabled = true; $('token-error').textContent = '';
@@ -251,13 +250,11 @@ Al terminar dime el nombre de la conexión y el usuario asociado, sin revelar se
       }));
     } catch (e) { if ($('tokens-list')) $('tokens-list').innerHTML = `<p class="form-error">${esc(e.message)}</p>`; }
   }
-  function showProfile() {
-    panelLayout(`<h2 id="dialog-title">Mi cuenta</h2><div class="section"><div class="account-detail"><span>Usuario</span><strong>@${esc(user.username)}</strong></div><div class="account-detail"><span>Acceso</span><strong>Landing compartida</strong></div></div><div class="section"><button class="secondary" id="logout">Cerrar sesión</button></div>`);
-    $('logout').addEventListener('click', async () => {
-      try { await request('/api/auth/logout', { method: 'POST', data: {} }); }
-      catch (e) { if (e.status !== 401) { toast(e.message); return; } }
-      session = ''; sessionStorage.removeItem(sessionKey); user = null; newToken = ''; newTokenName = ''; updateAccount(); authTab = 'login'; showAuth();
-    });
+  async function logout() {
+    const button = $('logout'); button.disabled = true;
+    try { await request('/api/auth/logout', { method: 'POST', data: {} }); }
+    catch (e) { if (e.status !== 401) { toast(e.message); button.disabled = false; return; } }
+    session = ''; sessionStorage.removeItem(sessionKey); user = null; newToken = ''; newTokenName = ''; updateAccount(); authTab = 'login'; showAuth();
   }
   $('account-trigger').addEventListener('click', async () => {
     $('account-dialog').showModal();
